@@ -94,7 +94,20 @@ calcCollisions = function(bodies)
 		for j in range(i+1, maxIndex)
 			bj = bodies[j]
 			if collide(bi, bj) then
-				// ToDo
+				// Collision Response
+                local dx = bj.x - bi.x
+                local dy = bj.y - bi.y
+                local distance = math.sqrt(dx * dx + dy * dy)
+                local totalMass = bi.mass + bj.mass
+                local nx = dx / distance
+                local ny = dy / distance
+                local p = 2.0 * (bi.vx * nx + bi.vy * ny - bj.vx * nx - bj.vy * ny) / totalMass
+
+                // Apply collision forces
+                bi.vx = bi.vx - p * bi.mass * nx
+                bi.vy = bi.vy - p * bi.mass * ny
+                bj.vx = bj.vx + p * bj.mass * nx
+                bj.vy = bj.vy + p * bj.mass * ny
 			end if
 		end for
 	end for
