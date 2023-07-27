@@ -14,7 +14,7 @@ if debugDraw then
 end if
 
 fillCircle = function(v, r)
-    debugDrawDisplay.fillEllipse(v.x - r, v.y - r, r * 2, r * 2)
+    debugDrawDisplay.fillEllipse v.x - r, v.y - r, r * 2, r * 2
 end function
 
 degsToRads = function (d)
@@ -38,7 +38,7 @@ getPoints = function(body)
 
     if debugDraw then
         for p in points
-            fillCircle(p, 3)
+            fillCircle p, 3
         end for
     end if
 

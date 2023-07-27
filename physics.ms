@@ -130,8 +130,8 @@ collide = function(b1, b2)
             b2.y += displacement.y / 2
         end if
 
-        b1.forces.push(impulse)
-        b2.forces.push(impulse.multiply(-1))
+        b1.forces.push impulse
+        b2.forces.push impulse.multiply(-1)
     end if
 end function
 
@@ -148,7 +148,7 @@ calcCollisions = function(bodies)
         for j in range(i+1, maxIndex)
             bj = bodies[j]
 
-            collide(bi, bj)
+            collide bi, bj
         end for
     end for
 end function

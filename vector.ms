@@ -14,6 +14,7 @@ vec2.add = function(v2)
     v.x = self.x + v2.x
     v.y = self.y + v2.y
     return v
+    return Vec2(self.x - v2.x, self.y - v2.y)
 end function
 
 vec2.dot = function(v2)
@@ -35,7 +36,7 @@ end function
 
 vec2.draw = function(start, length, display)
     _end = self.normalized.multiply(length)
-    display.line(start.x, start.y, start.x + _end.x, start.y + _end.y)
+    display.line start.x, start.y, start.x + _end.x, start.y + _end.y
 end function
 
 vec2.toString = function
