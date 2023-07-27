@@ -76,42 +76,51 @@ findMinMaxInAxis = function(points, axis)
     return { "min": min, "max": max }
 end function
 
-areOverlappingOnAxis = function(b1, b2, axis)
-	// axisNormal = vector.Vec2(-axis.y, axis.x)
-
+findOverlapOnAxis = function(b1, b2, axis)
     p1 = getPoints(b1)
     p2 = getPoints(b2)
 
     minmax1 = findMinMaxInAxis(p1, axis)
     minmax2 = findMinMaxInAxis(p2, axis)
 
-    // fillCircle(axis.multiply(minmax1.min).add(vector.Vec2(500, 0)))
-    // fillCircle(axis.multiply(minmax1.max).add(vector.Vec2(500, 0)))
-    // fillCircle(axis.multiply(minmax2.min).add(vector.Vec2(500, 0)))
-    // fillCircle(axis.multiply(minmax2.max).add(vector.Vec2(500, 0)))
+    if axis.x == 1 and axis.y == 0 then
+        gfx.line(minmax1.min, 20, minmax1.max, 20)
+        gfx.line(minmax2.min, 30, minmax2.max, 30)
+    end if
 
-    return minmax1.max > minmax2.min and minmax1.min < minmax2.max
+    if not (minmax1.max > minmax2.min and minmax1.min < minmax2.max) then
+        return false
+    end if
 
-    // for i in range(points.len - 1)
-    //     v1 = points[i]
-    //     v2 = points[(i + 1) % points.len]
+    a = minmax1.max - minmax2.min
+    b = minmax2.max - minmax1.min
 
-    //     fillCircle(v1.add(vector.Vec2(b1.x, b1.y)))
-
-    //     vec = v2.sub(v1)
-
-    // end for
+    if a > b then
+        return b
+    else
+        return -a
+    end if
 end function
 
-areOverlapping = function(b1, b2)
+findOverlap = function(b1, b2)
     // todo: remove duplicates
     axes = getAxes(b1) + getAxes(b2)
 
+    hasOverlap = false
+    minOverlap = null
+
     for axis in axes
-        if not areOverlappingOnAxis(b1, b2, axis) then
+        overlap = findOverlapOnAxis(b1, b2, axis)
+
+        if overlap == false then
             return false
+        end if
+
+        if not hasOverlap or abs(overlap) < minOverlap.magnitude then
+            hasOverlap = true
+            minOverlap = axis.multiply(overlap)
         end if
     end for
 
-    return true
+    return minOverlap
 end function

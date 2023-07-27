@@ -7,7 +7,7 @@ import "vector"
 import "collisions"
 
 // Global physics constants
-gravity = -0		// gravity, in upward pixels/sec^2 (1000 means 1 meter = 100 pixels)
+gravity = -200		// gravity, in upward pixels/sec^2 (1000 means 1 meter = 100 pixels)
 
 // Function to find the area of a physics body.
 area = function(body)
@@ -79,14 +79,30 @@ initPhys = function(body, density=0.01, elasticity=0.9)
 end function
 
 collide = function(b1, b2)
-    overlapping = collisions.areOverlapping(b1, b2)
+    overlap = collisions.findOverlap(b1, b2)
 
-    if overlapping then
-        b1.tint = color.red
-        b2.tint = color.red
-    else
-        b1.tint = color.green
-        b2.tint = color.green
+    // todo: make this mess better
+    if overlap then
+        factor = 1
+
+        if b1.mass != 0 then
+            moveable = b1
+            factor = -1
+        else if b2.mass != 0 then
+            moveable = b2
+        else
+            // both bodies are static, can't move either
+            return
+        end if
+
+        if overlap.x != 0 then
+            moveable.vx = 0
+            moveable.x -= overlap.x * factor
+        end if
+        if overlap.y != 0 then
+            moveable.vy = 0
+            moveable.y -= overlap.y * factor
+        end if
     end if
 end function
 
@@ -96,9 +112,8 @@ calcCollisions = function(bodies)
         bi = bodies[i]
         for j in range(i+1, maxIndex)
             bj = bodies[j]
-            if collide(bi, bj) then
-                // ToDo
-            end if
+
+            collide(bi, bj)
         end for
     end for
 end function
