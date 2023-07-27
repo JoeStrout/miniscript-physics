@@ -132,7 +132,7 @@ updateBody = function(body, dt=0.01)
 end function
 
 updateMany = function(bodies, dt=0.01)
-	gfx.clear
+    gfx.clear
     calcCollisions bodies
     for body in bodies
         updateBody body, dt

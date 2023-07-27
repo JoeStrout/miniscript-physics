@@ -10,14 +10,14 @@ fillCircle = function(v, r)
 end function
 
 degsToRads = function (d)
-	return (d / 360) * 2 * pi
+    return (d / 360) * 2 * pi
 end function
 
 getPoints = function(body)
-	// todo: handle cases for non-rectangular objects
+    // todo: handle cases for non-rectangular objects
 
-	hw = body.localBounds.width * body.scale / 2
-	hh = body.localBounds.height * body.scale / 2
+    hw = body.localBounds.width * body.scale / 2
+    hh = body.localBounds.height * body.scale / 2
     pos = vector.Vec2(body.x, body.y)
 
     topLeft     = vector.Vec2(-hw, hh).rotatedBy(degsToRads(body.rotation)).add(pos)
@@ -37,7 +37,7 @@ getPoints = function(body)
 end function
 
 getAxes = function(body)
-	// todo: handle cases for non-rectangular objects, should return one axis per face
+    // todo: handle cases for non-rectangular objects, should return one axis per face
 
     axes = [
         xAxis.rotatedBy(degsToRads(body.rotation)),
