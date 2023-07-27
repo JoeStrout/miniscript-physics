@@ -5,7 +5,7 @@
 
 import "vector"
 import "collisions"
-import "math"
+import "mathUtil"
 
 // Global physics constants
 gravity = 700		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
@@ -105,7 +105,7 @@ collide = function(b1, b2)
     if overlap then
         // Calculate impulse vector needed to push b1 out of b2
 
-        elasticity = math.min(b1.elasticity, b2.elasticity)
+        elasticity = mathUtil.min(b1.elasticity, b2.elasticity)
         vrel = vector.Vec2(b1.vx - b2.vx, b1.vy - b2.vy)
 
         impulseMagnitude = -(1 + elasticity) * vrel.dot(overlap.normal) / ((1 / b1.mass) + (1 / b2.mass))

@@ -1,5 +1,4 @@
 import "vector"
-import "math"
 
 xAxis = vector.Vec2(1, 0)
 yAxis = vector.Vec2(0, 1)
