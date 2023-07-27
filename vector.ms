@@ -33,9 +33,13 @@ vec2.magnitude = function
     return sqrt(self.x ^ 2 + self.y ^ 2)
 end function
 
-vec2.draw = function(start, length)
+vec2.draw = function(start, length, display)
     _end = self.normalized.multiply(length)
-    gfx.line(start.x, start.y, start.x + _end.x, start.y + _end.y)
+    display.line(start.x, start.y, start.x + _end.x, start.y + _end.y)
+end function
+
+vec2.toString = function
+    return self.x + ", " + self.y
 end function
 
 // todo: is there a better way to do this?

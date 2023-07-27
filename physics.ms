@@ -5,9 +5,12 @@
 
 import "vector"
 import "collisions"
+import "math"
 
 // Global physics constants
-gravity = -200		// gravity, in upward pixels/sec^2 (1000 means 1 meter = 100 pixels)
+gravity = 700		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
+
+gravityForce = vector.Vec2(0, -gravity)
 
 // Function to find the area of a physics body.
 area = function(body)
@@ -51,7 +54,7 @@ rotInertia = function(body, density, scale)
 end function	
 
 
-initPhys = function(body, density=0.01, elasticity=0.9)
+initPhys = function(body, static=false, density=0.01, elasticity=0.4)
     // if our "body" doesn't have a localBounds, but it does have an
     // image, assume its bounds matches the image (e.g. for a sprite)
     if not body.hasIndex("localBounds") then
@@ -68,7 +71,14 @@ initPhys = function(body, density=0.01, elasticity=0.9)
     
     // now add all the physics properties we need
     if body.hasIndex("scale") then scale = body.scale else scale = 1
-    body.mass = area(body) * density * scale
+
+    if static then
+        body.mass = 1 / 0
+    else
+        body.mass = area(body) * density * scale
+    end if
+
+    body.static = static
     body.elasticity = elasticity
     body.vx = 0
     body.vy = 0
@@ -76,36 +86,59 @@ initPhys = function(body, density=0.01, elasticity=0.9)
     body.rotInertia = rotInertia(body, density, scale)
     body.rotSpeed = 0
     body.rotDrag = 0.01
+    body.forces = []
+end function
+
+min = function(a, b)
+    if a > b then
+        return b
+    end if
+
+    return a
 end function
 
 collide = function(b1, b2)
+    if b1.static and b2.static then return
+
     overlap = collisions.findOverlap(b1, b2)
 
-    // todo: make this mess better
     if overlap then
-        overlap.normal.draw(vector.Vec2(b1.x, b1.y), overlap.depth)
-        overlap.normal.draw(vector.Vec2(b2.x, b2.y), overlap.depth)
+        // Calculate impulse vector needed to push b1 out of b2
 
-        if b1.mass != 0 then
-            moveable = b1
-            factor = -1
-        else if b2.mass != 0 then
-            moveable = b2
+        elasticity = math.min(b1.elasticity, b2.elasticity)
+        vrel = vector.Vec2(b1.vx - b2.vx, b1.vy - b2.vy)
+
+        impulseMagnitude = -(1 + elasticity) * vrel.dot(overlap.normal) / ((1 / b1.mass) + (1 / b2.mass))
+        impulse = overlap.normal.multiply(impulseMagnitude)
+
+        // First push objects out of the way to prevent them from overlapping
+        displacement = overlap.normal.multiply(overlap.depth)
+
+        // If neither object is static we push each one out of the way by half of the displacement.
+        // If one of them is static we push the non-static object by the entire displacement.
+
+        if b1.static then
+            b2.x += displacement.x
+            b2.y += displacement.y
+        else if b2.static then
+            b1.x -= displacement.x
+            b1.y -= displacement.y
         else
-            // both bodies are static, can't move either
-            return
+            b1.x -= displacement.x / 2
+            b1.y -= displacement.y / 2
+            b2.x += displacement.x / 2
+            b2.y += displacement.y / 2
         end if
 
-        moveable.x += overlap.normal.x * overlap.depth
-        moveable.y += overlap.normal.y * overlap.depth
-
-        if overlap.normal.x != 0 then
-            moveable.vx = 0
-        end if
-        if overlap.normal.y != 0 then
-            moveable.vy = 0
-        end if
+        b1.forces.push(impulse)
+        b2.forces.push(impulse.multiply(-1))
     end if
+end function
+
+resetForces = function(bodies)
+    for b in bodies
+        b.forces = [gravityForce]
+    end for
 end function
 
 calcCollisions = function(bodies)
@@ -121,12 +154,22 @@ calcCollisions = function(bodies)
 end function
 
 updateBody = function(body, dt=0.01)
-    if not body.mass then return  // 0 mass means a static (non-moving) body
-    
-    // for now, we'll do simple forward Euler integration of Newton's laws.
-    body.vy = body.vy + gravity * dt
+    if body.static then return
+
+    accelX = 0
+    accelY = 0
+
+    // F = m*a => a = F/m
+    for f in body.forces
+        accelX += f.x / body.mass
+        accelY += f.y / body.mass
+    end for
+
+    body.vx += accelX
+    body.vy += accelY
+
     // ToDo: drag
-    
+
     body.x = body.x + body.vx * dt
     body.y = body.y + body.vy * dt
     
@@ -134,8 +177,13 @@ updateBody = function(body, dt=0.01)
 end function
 
 updateMany = function(bodies, dt=0.01)
-    gfx.clear
+    if collisions.debugDraw then
+        collisions.debugDrawDisplay.clear
+    end if
+
+    resetForces bodies
     calcCollisions bodies
+
     for body in bodies
         updateBody body, dt
     end for

@@ -1,24 +1,24 @@
 import "vector"
+import "math"
 
 xAxis = vector.Vec2(1, 0)
 yAxis = vector.Vec2(0, 1)
 
-debugDraw = true
+debugDraw = false
+
+if debugDraw then
+    display(3).mode = displayMode.pixel
+
+    debugDrawDisplay = display(3)
+    debugDrawDisplay.clear
+end if
 
 fillCircle = function(v, r)
-    gfx.fillEllipse(v.x - r, v.y - r, r * 2, r * 2)
+    debugDrawDisplay.fillEllipse(v.x - r, v.y - r, r * 2, r * 2)
 end function
 
 degsToRads = function (d)
     return (d / 360) * 2 * pi
-end function
-
-min = function(a, b)
-    if a > b then
-        return b
-    end if
-
-    return a
 end function
 
 getPoints = function(body)
