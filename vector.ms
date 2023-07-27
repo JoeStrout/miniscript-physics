@@ -10,7 +10,7 @@ list.sub = function(x)
     return [self[0] - x[0], self[1] - x[1]]
 end function
 
-// rotates this vector around the origin. r is the angle to rotate this vector by in radians
+// Rotates returns a vector rotated around the origin. r is the angle to rotate this vector by in radians
 list.rotatedBy = function(r)
     return [cos(r) * self[0] - sin(r) * self[1], sin(r) * self[0] + cos(r) * self[1]]
 end function
@@ -22,6 +22,11 @@ end function
 
 list.magnitude = function
     return sqrt(self[0] ^ 2 + self[1] ^ 2)
+end function
+
+// Returns a vector perpendicular to this one
+list.normal = function
+    return [-self[1], self[0]]
 end function
 
 list.draw = function(start, length, display)

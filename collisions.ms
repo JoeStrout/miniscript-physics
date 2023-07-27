@@ -3,82 +3,33 @@ import "vector"
 xAxis = [1, 0]
 yAxis = [0, 1]
 
-debugDraw = false
+debugDraw = true
 
 if debugDraw then
-    display(3).mode = displayMode.pixel
+    display(2).mode = displayMode.pixel
 
-    debugDrawDisplay = display(3)
+    debugDrawDisplay = display(2)
     debugDrawDisplay.clear
 end if
 
-fillCircle = function(v, r)
-    debugDrawDisplay.fillEllipse v.x - r, v.y - r, r * 2, r * 2
+debugDrawAxes = function(p, axes, length=500)
+    for axis in axes
+        edge = axis.normal
+        debugDrawDisplay.line p.x, p.y, p.x + edge.x * length, p.y + edge.y * length
+    end for
 end function
 
 degsToRads = function (d)
     return (d / 360) * 2 * pi
 end function
 
-getPoints = function(body)
-    // todo: handle cases for non-rectangular objects
-
-    hw = body.localBounds.width * body.scale / 2
-    hh = body.localBounds.height * body.scale / 2
-    pos = [body.x, body.y]
-    rot = degsToRads(body.rotation)
-
-    topLeft     = [-hw, hh].rotatedBy(rot).plus(pos)
-    topRight    = [hw , hh].rotatedBy(rot).plus(pos)
-    bottomRight = [hw, -hh].rotatedBy(rot).plus(pos)
-    bottomLeft  = [-hw, -hh].rotatedBy(rot).plus(pos)
-
-    points = [topLeft, topRight, bottomRight, bottomLeft]
-
-    if debugDraw then
-        for p in points
-            fillCircle p, 3
-        end for
-    end if
-
-    return points
-end function
-
-projectPoints = function(points, axis)
-    min = 0
-    hasMin = false
-    max = 0
-    hasMax = false
-
-    for p in points
-        proj = p.dot(axis)
-
-        if not hasMin or proj < min then
-            hasMin = true
-            min = proj
-        end if
-        if not hasMax or proj > max then
-            hasMax = true
-            max = proj
-        end if
-    end for
-
-    return { "min": min, "max": max }
-end function
-
-findOverlapPoints = function(points1, points2)
+findOverlapPoints = function(axes, body1, body2)
     normal = null
     minDepth = 0
 
-    for i in range(points1.len - 1)
-        p1 = points1[i]
-        p2 = points1[(i + 1) % points1.len]
-
-        edge = p2.sub(p1)
-        axis = [-edge.y, edge.x].normalized()
-
-        proj1 = projectPoints(points1, axis)
-        proj2 = projectPoints(points2, axis)
+    for axis in axes
+        proj1 = body1.shape.projectOn(axis, body1.pos, degsToRads(body1.rotation))
+        proj2 = body2.shape.projectOn(axis, body2.pos, degsToRads(body2.rotation))
 
         if proj1.min >= proj2.max or proj2.min >= proj1.max then
             // one axis doesn't have overlap, the objects don't collide
@@ -105,25 +56,45 @@ findOverlapPoints = function(points1, points2)
 end function
 
 findOverlap = function(b1, b2)
-    points1 = getPoints(b1)
-    points2 = getPoints(b2)
+    pos1 = b1.pos
+    pos2 = b2.pos
 
-    overlap1 = findOverlapPoints(points1, points2)
+    //TODO: Remove duplicates
+    axes = b1.shape.axes(degsToRads(b1.rotation), pos1, pos2) +
+           b2.shape.axes(degsToRads(b2.rotation), pos2, pos1)
+
+    if debugDraw then
+        b1.shape.draw debugDrawDisplay, b1.pos, degsToRads(b1.rotation)
+        b2.shape.draw debugDrawDisplay, b2.pos, degsToRads(b2.rotation)
+
+        debugDrawDisplay.line b1.x, b1.y, b2.x, b2.y, color.gray
+
+        debugDrawAxes b1.pos, axes
+    end if
+
+    overlap1 = findOverlapPoints(axes, b1, b2)
     if not overlap1 then
         return false
     end if
-    
-    overlap2 = findOverlapPoints(points2, points1)
+
+    overlap2 = findOverlapPoints(axes, b2, b1)
     if not overlap2 then
         return false
     end if
 
     if overlap2.depth > overlap1.depth then
-        return overlap1
+        overlap = overlap1
+    else
+        overlap = overlap2
+
+        // invert direction because overlap2 tests b2 against b1, instead of b1 against b2
+        overlap.normal = overlap2.normal.times(-1)
     end if
 
-    // invert direction because overlap2 tests b2 against b1, instead of b1 against b2
-    overlap2.normal = overlap2.normal.times(-1)
+    if debugDraw then
+        dir = overlap.normal.times(overlap.depth * 10)
+        debugDrawDisplay.line b1.x, b1.y, b1.x + dir.x, b1.y + dir.y, color.red
+    end if
 
-    return overlap2
+    return overlap
 end function

@@ -4,8 +4,10 @@
 // Bounds objects.
 
 import "listUtil"
-import "collisions"
 import "mathUtil"
+
+import "collisions"
+import "shapes"
 
 // Global physics constants
 gravity = 700		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
@@ -54,7 +56,7 @@ rotInertia = function(body, density, scale)
 end function	
 
 
-initPhys = function(body, static=false, density=0.01, elasticity=0.4)
+initPhys = function(body, static=false, shape=null, density=0.01, elasticity=0.4)
     // if our "body" doesn't have a localBounds, but it does have an
     // image, assume its bounds matches the image (e.g. for a sprite)
     if not body.hasIndex("localBounds") then
@@ -72,6 +74,10 @@ initPhys = function(body, static=false, density=0.01, elasticity=0.4)
     // now add all the physics properties we need
     if body.hasIndex("scale") then scale = body.scale else scale = 1
 
+    if shape == null then
+        shape = shapes.Rectangle(body.localBounds.width * body.scale, body.localBounds.height * scale)
+    end if
+
     if static then
         body.mass = 1 / 0
     else
@@ -87,6 +93,11 @@ initPhys = function(body, static=false, density=0.01, elasticity=0.4)
     body.rotSpeed = 0
     body.rotDrag = 0.01
     body.forces = []
+    body.shape = shape
+
+    body.pos = function
+        return [body.x, body.y]
+    end function
 end function
 
 collide = function(b1, b2)
