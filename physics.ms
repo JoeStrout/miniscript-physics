@@ -3,14 +3,14 @@
 // which in this case can be either a Bounds object or a list of
 // Bounds objects.
 
-import "vector"
+import "listUtil"
 import "collisions"
 import "mathUtil"
 
 // Global physics constants
 gravity = 700		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
 
-gravityForce = vector.Vec2(0, -gravity)
+gravityForce = [0, -gravity]
 
 // Function to find the area of a physics body.
 area = function(body)
@@ -106,13 +106,13 @@ collide = function(b1, b2)
         // Calculate impulse vector needed to push b1 out of b2
 
         elasticity = mathUtil.min(b1.elasticity, b2.elasticity)
-        vrel = vector.Vec2(b1.vx - b2.vx, b1.vy - b2.vy)
+        vrel = [b1.vx - b2.vx, b1.vy - b2.vy]
 
         impulseMagnitude = -(1 + elasticity) * vrel.dot(overlap.normal) / ((1 / b1.mass) + (1 / b2.mass))
-        impulse = overlap.normal.multiply(impulseMagnitude)
+        impulse = overlap.normal.times(impulseMagnitude)
 
         // First push objects out of the way to prevent them from overlapping
-        displacement = overlap.normal.multiply(overlap.depth)
+        displacement = overlap.normal.times(overlap.depth)
 
         // If neither object is static we push each one out of the way by half of the displacement.
         // If one of them is static we push the non-static object by the entire displacement.
@@ -131,7 +131,7 @@ collide = function(b1, b2)
         end if
 
         b1.forces.push impulse
-        b2.forces.push impulse.multiply(-1)
+        b2.forces.push impulse.times(-1)
     end if
 end function
 

@@ -1,7 +1,7 @@
 import "vector"
 
-xAxis = vector.Vec2(1, 0)
-yAxis = vector.Vec2(0, 1)
+xAxis = [1, 0]
+yAxis = [0, 1]
 
 debugDraw = false
 
@@ -25,13 +25,13 @@ getPoints = function(body)
 
     hw = body.localBounds.width * body.scale / 2
     hh = body.localBounds.height * body.scale / 2
-    pos = vector.Vec2(body.x, body.y)
+    pos = [body.x, body.y]
     rot = degsToRads(body.rotation)
 
-    topLeft     = vector.Vec2(-hw, hh).rotatedBy(rot).add(pos)
-    topRight    = vector.Vec2(hw , hh).rotatedBy(rot).add(pos)
-    bottomRight = vector.Vec2(hw, -hh).rotatedBy(rot).add(pos)
-    bottomLeft  = vector.Vec2(-hw, -hh).rotatedBy(rot).add(pos)
+    topLeft     = [-hw, hh].rotatedBy(rot).plus(pos)
+    topRight    = [hw , hh].rotatedBy(rot).plus(pos)
+    bottomRight = [hw, -hh].rotatedBy(rot).plus(pos)
+    bottomLeft  = [-hw, -hh].rotatedBy(rot).plus(pos)
 
     points = [topLeft, topRight, bottomRight, bottomLeft]
 
@@ -75,7 +75,7 @@ findOverlapPoints = function(points1, points2)
         p2 = points1[(i + 1) % points1.len]
 
         edge = p2.sub(p1)
-        axis = vector.Vec2(-edge.y, edge.x).normalized()
+        axis = [-edge.y, edge.x].normalized()
 
         proj1 = projectPoints(points1, axis)
         proj2 = projectPoints(points2, axis)
@@ -92,7 +92,7 @@ findOverlapPoints = function(points1, points2)
             depth = depth2
         else
             depth = depth1
-            axis = axis.multiply(-1)
+            axis = axis.times(-1)
         end if
 
         if normal == null or depth < minDepth then
@@ -123,7 +123,7 @@ findOverlap = function(b1, b2)
     end if
 
     // invert direction because overlap2 tests b2 against b1, instead of b1 against b2
-    overlap2.normal = overlap2.normal.multiply(-1)
+    overlap2.normal = overlap2.normal.times(-1)
 
     return overlap2
 end function
