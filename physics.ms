@@ -89,14 +89,6 @@ initPhys = function(body, static=false, density=0.01, elasticity=0.4)
     body.forces = []
 end function
 
-min = function(a, b)
-    if a > b then
-        return b
-    end if
-
-    return a
-end function
-
 collide = function(b1, b2)
     if b1.static and b2.static then return
 
