@@ -13,19 +13,28 @@ degsToRads = function (d)
     return (d / 360) * 2 * pi
 end function
 
+min = function(a, b)
+    if a > b then
+        return b
+    end if
+
+    return a
+end function
+
 getPoints = function(body)
     // todo: handle cases for non-rectangular objects
 
     hw = body.localBounds.width * body.scale / 2
     hh = body.localBounds.height * body.scale / 2
     pos = vector.Vec2(body.x, body.y)
+    rot = degsToRads(body.rotation)
 
-    topLeft     = vector.Vec2(-hw, hh).rotatedBy(degsToRads(body.rotation)).add(pos)
-    topRight    = vector.Vec2(hw , hh).rotatedBy(degsToRads(body.rotation)).add(pos)
-    bottomLeft  = vector.Vec2(-hw, -hh).rotatedBy(degsToRads(body.rotation)).add(pos)
-    bottomRight = vector.Vec2(hw, -hh).rotatedBy(degsToRads(body.rotation)).add(pos)
+    topLeft     = vector.Vec2(-hw, hh).rotatedBy(rot).add(pos)
+    topRight    = vector.Vec2(hw , hh).rotatedBy(rot).add(pos)
+    bottomRight = vector.Vec2(hw, -hh).rotatedBy(rot).add(pos)
+    bottomLeft  = vector.Vec2(-hw, -hh).rotatedBy(rot).add(pos)
 
-    points = [topLeft, topRight, bottomLeft, bottomRight]
+    points = [topLeft, topRight, bottomRight, bottomLeft]
 
     if debugDraw then
         for p in points
@@ -36,91 +45,86 @@ getPoints = function(body)
     return points
 end function
 
-getAxes = function(body)
-    // todo: handle cases for non-rectangular objects, should return one axis per face
-
-    axes = [
-        xAxis.rotatedBy(degsToRads(body.rotation)),
-        yAxis.rotatedBy(degsToRads(body.rotation)),
-    ]
-
-    if debugDraw then
-        for axis in axes
-            axis.draw(vector.Vec2(body.x, body.y), 300)
-        end for
-    end if
-
-    return axes
-end function
-
-findMinMaxInAxis = function(points, axis)
+projectPoints = function(points, axis)
     min = 0
     hasMin = false
     max = 0
     hasMax = false
 
     for p in points
-        dist = p.dot(axis)
+        proj = p.dot(axis)
 
-        if not hasMin or dist < min then
+        if not hasMin or proj < min then
             hasMin = true
-            min = dist
+            min = proj
         end if
-
-        if not hasMax or dist > max then
+        if not hasMax or proj > max then
             hasMax = true
-            max = dist
+            max = proj
         end if
     end for
 
     return { "min": min, "max": max }
 end function
 
-findOverlapOnAxis = function(b1, b2, axis)
-    p1 = getPoints(b1)
-    p2 = getPoints(b2)
+findOverlapPoints = function(points1, points2)
+    normal = null
+    minDepth = 0
 
-    minmax1 = findMinMaxInAxis(p1, axis)
-    minmax2 = findMinMaxInAxis(p2, axis)
+    for i in range(points1.len - 1)
+        p1 = points1[i]
+        p2 = points1[(i + 1) % points1.len]
 
-    if axis.x == 1 and axis.y == 0 then
-        gfx.line(minmax1.min, 20, minmax1.max, 20)
-        gfx.line(minmax2.min, 30, minmax2.max, 30)
-    end if
+        edge = p2.sub(p1)
+        axis = vector.Vec2(-edge.y, edge.x).normalized()
 
-    if not (minmax1.max > minmax2.min and minmax1.min < minmax2.max) then
-        return false
-    end if
+        proj1 = projectPoints(points1, axis)
+        proj2 = projectPoints(points2, axis)
 
-    a = minmax1.max - minmax2.min
-    b = minmax2.max - minmax1.min
-
-    if a > b then
-        return b
-    else
-        return -a
-    end if
-end function
-
-findOverlap = function(b1, b2)
-    // todo: remove duplicates
-    axes = getAxes(b1) + getAxes(b2)
-
-    hasOverlap = false
-    minOverlap = null
-
-    for axis in axes
-        overlap = findOverlapOnAxis(b1, b2, axis)
-
-        if overlap == false then
+        if proj1.min >= proj2.max or proj2.min >= proj1.max then
+            // one axis doesn't have overlap, the objects don't collide
             return false
         end if
 
-        if not hasOverlap or abs(overlap) < minOverlap.magnitude then
-            hasOverlap = true
-            minOverlap = axis.multiply(overlap)
+        depth1 = proj2.max - proj1.min
+        depth2 = proj1.max - proj2.min
+
+        if depth1 > depth2 then
+            depth = depth2
+        else
+            depth = depth1
+            axis = axis.multiply(-1)
+        end if
+
+        if normal == null or depth < minDepth then
+            normal = axis
+            minDepth = depth
         end if
     end for
 
-    return minOverlap
+    return { "normal": normal, "depth": minDepth }
+end function
+
+findOverlap = function(b1, b2)
+    points1 = getPoints(b1)
+    points2 = getPoints(b2)
+
+    overlap1 = findOverlapPoints(points1, points2)
+    if not overlap1 then
+        return false
+    end if
+    
+    overlap2 = findOverlapPoints(points2, points1)
+    if not overlap2 then
+        return false
+    end if
+
+    if overlap2.depth > overlap1.depth then
+        return overlap1
+    end if
+
+    // invert direction because overlap2 tests b2 against b1, instead of b1 against b2
+    overlap2.normal = overlap2.normal.multiply(-1)
+
+    return overlap2
 end function

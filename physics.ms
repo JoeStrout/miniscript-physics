@@ -83,7 +83,8 @@ collide = function(b1, b2)
 
     // todo: make this mess better
     if overlap then
-        factor = 1
+        overlap.normal.draw(vector.Vec2(b1.x, b1.y), overlap.depth)
+        overlap.normal.draw(vector.Vec2(b2.x, b2.y), overlap.depth)
 
         if b1.mass != 0 then
             moveable = b1
@@ -95,13 +96,14 @@ collide = function(b1, b2)
             return
         end if
 
-        if overlap.x != 0 then
+        moveable.x += overlap.normal.x * overlap.depth
+        moveable.y += overlap.normal.y * overlap.depth
+
+        if overlap.normal.x != 0 then
             moveable.vx = 0
-            moveable.x -= overlap.x * factor
         end if
-        if overlap.y != 0 then
+        if overlap.normal.y != 0 then
             moveable.vy = 0
-            moveable.y -= overlap.y * factor
         end if
     end if
 end function
