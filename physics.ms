@@ -5,29 +5,16 @@
 
 import "listUtil"
 import "mathUtil"
+import "importUtil"
 
 import "collisions"
-import "shapes"
+import "debugDraw"
+ensureImport "shapes"
 
 // Global physics constants
-gravity = 700		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
+gravity = 300		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
 
 gravityForce = [0, -gravity]
-
-// Function to find the area of a physics body.
-area = function(body)
-    if body.localBounds isa list then
-        // sum up the mass of each part
-        result = 0
-        for b in body.localBounds
-            result = result + b.width * b.height
-        end for
-        return result
-    else
-        // simple case: only one part (Bounds)
-        return body.localBounds.width * body.localBounds.height
-    end if
-end function	
 
 // Function to find the rotational inertia of a physics body.
 rotInertia = function(body, density, scale)
@@ -56,7 +43,7 @@ rotInertia = function(body, density, scale)
 end function	
 
 
-initPhys = function(body, static=false, shape=null, density=0.01, elasticity=0.4)
+initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
     // if our "body" doesn't have a localBounds, but it does have an
     // image, assume its bounds matches the image (e.g. for a sprite)
     if not body.hasIndex("localBounds") then
@@ -75,16 +62,15 @@ initPhys = function(body, static=false, shape=null, density=0.01, elasticity=0.4
     if body.hasIndex("scale") then scale = body.scale else scale = 1
 
     if shape == null then
-        shape = shapes.Rectangle(body.localBounds.width * body.scale, body.localBounds.height * scale)
-    end if
-
-    if static then
-        body.mass = 1 / 0
+        body.shape = shapes.Rectangle(body.localBounds.width * body.scale, body.localBounds.height * scale)
     else
-        body.mass = area(body) * density * scale
+        body.shape = shape
     end if
 
-    body.static = static
+    calcMass = body.shape.area * density
+
+    body.mass = calcMass
+    body.static = false
     body.elasticity = elasticity
     body.vx = 0
     body.vy = 0
@@ -93,19 +79,33 @@ initPhys = function(body, static=false, shape=null, density=0.01, elasticity=0.4
     body.rotSpeed = 0
     body.rotDrag = 0.01
     body.forces = []
-    body.shape = shape
 
     body.pos = function
         return [body.x, body.y]
+    end function
+
+    body.setStatic = function(s)
+        body.static = s
+
+        if s then
+            body.mass = 1 / 0
+        else
+            body.mass = calcMass
+        end if
     end function
 end function
 
 collide = function(b1, b2)
     if b1.static and b2.static then return
 
-    overlap = collisions.findOverlap(b1, b2)
+    overlap = collisions.collideBodies(b1, b2)
 
     if overlap then
+        if debugDraw.enabled then
+            debugDraw.vector b1.pos, overlap.normal.times(-overlap.depth), color.red, 4
+            debugDraw.vector b2.pos, overlap.normal.times(overlap.depth), color.red, 4
+        end if
+
         // Calculate impulse vector needed to push b1 out of b2
 
         elasticity = mathUtil.min(b1.elasticity, b2.elasticity)
@@ -180,9 +180,13 @@ updateBody = function(body, dt=0.01)
 end function
 
 updateMany = function(bodies, dt=0.01)
-    if collisions.debugDraw then
-        collisions.debugDrawDisplay.clear
+    if debugDraw.enabled then
+        debugDraw.drawDisplay.clear
     end if
+
+    display(3).clear
+    display(3).column = 0
+    display(3).row = 0
 
     resetForces bodies
     calcCollisions bodies
