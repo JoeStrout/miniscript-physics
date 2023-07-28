@@ -60,8 +60,8 @@ findOverlap = function(b1, b2)
     pos2 = b2.pos
 
     //TODO: Remove duplicates
-    axes = b1.shape.axes(degsToRads(b1.rotation), pos1, pos2) +
-           b2.shape.axes(degsToRads(b2.rotation), pos2, pos1)
+    axes = b1.shape.axes(degsToRads(b1.rotation), b2) +
+           b2.shape.axes(degsToRads(b2.rotation), b1)
 
     if debugDraw then
         b1.shape.draw debugDrawDisplay, b1.pos, degsToRads(b1.rotation)
@@ -92,8 +92,8 @@ findOverlap = function(b1, b2)
     end if
 
     if debugDraw then
-        dir = overlap.normal.times(overlap.depth * 10)
-        debugDrawDisplay.line b1.x, b1.y, b1.x + dir.x, b1.y + dir.y, color.red
+        dir = overlap.normal.times(-overlap.depth)
+        debugDrawDisplay.line b1.x, b1.y, b1.x + dir.x, b1.y + dir.y, color.red, 4
     end if
 
     return overlap

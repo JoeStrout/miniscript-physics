@@ -5,7 +5,7 @@ Shape = {}
 Shape.vertices = null
 
 // Default implementation simply returns each edge's normal
-Shape.axes = function(rot, ourPos, otherPos)
+Shape.axes = function(rot, otherBody)
     points = self.vertices
     axes = []
 
@@ -77,10 +77,6 @@ end function
 
 Circle = function(radius)
     obj = new Shape
-
-    obj.axes = function(rot, ourPos, otherPos)
-        return [ourPos.sub(otherPos).normal().normalized()]
-    end function
 
     obj.projectOn = function(axis, pos, rot)
         projCenter = pos.dot(axis)
