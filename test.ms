@@ -35,12 +35,24 @@ b1 = createBlock(600, 300, color.blue, 2)
 b1.setStatic true
 b1.rotation = 20
 
-b2 = createCircle(800, 600, color.orange, 1)
+for i in range(20)
+    clr = color.rgb(rnd * 255, rnd * 255, rnd * 255)
 
-ground = createBlock(480, -55, color.yellow, 4)
-ground.setStatic true
+    createCircle(display(5).width * rnd, display(5).height * rnd, clr, 1)
+end for
 
-control = b2
+b = createBlock(480, -55, color.yellow, 4)
+b.setStatic true
+
+b = createBlock(-75, 480, color.yellow, 4)
+b.rotation = 90
+b.setStatic true
+
+b = createBlock(1070, 480, color.yellow, 4)
+b.rotation = 90
+b.setStatic true
+
+control = b1
 
 dt = 1/60
 while not key.available

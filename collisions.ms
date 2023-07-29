@@ -109,6 +109,6 @@ collideBodies = function(b1, b2)
         }
     else if b1.shape isa shapes.CircleShape and b2.shape isa shapes.CircleShape then
         // Circle-circle collision
-        return testCircles(b1, b2)
+        return testCircleCircle(b1, b2)
     end if
 end function
