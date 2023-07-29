@@ -41,8 +41,6 @@ end function
 clip = function(v1, v2, n, o)
     cp = []
 
-    print n
-
     d1 = n.dot(v1) - o
     d2 = n.dot(v2) - o
 
@@ -111,6 +109,5 @@ clipPoints = function(points1, points2, normal)
         i = i - 1
     end while
 
-    print cp
     return cp
 end function

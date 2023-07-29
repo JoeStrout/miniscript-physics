@@ -38,6 +38,10 @@ list.clamp = function(min, max)
     ]
 end function
 
+list.cross = function(n)
+    return [-self[1] * n, self[0] * n]
+end function
+
 list.equals = function(other)
     return self[0] == other[0] and self[1] == other[1]
 end function
@@ -45,4 +49,16 @@ end function
 list.draw = function(start, length, display)
     _end = self.normalized.times(length)
     display.line start[0], start[1], start[0] + _end[0], start[1] + _end[1]
+end function
+
+averageMany = function(vs)
+    sumX = 0
+    sumY = 0
+
+    for v in vs
+        sumX += v[0]
+        sumY += v[1]
+    end for
+
+    return [sumX / vs.len, sumY / vs.len]
 end function

@@ -110,10 +110,9 @@ collideBodies = function(b1, b2)
         if not result then return false
 
         // Flip the normal because we are testing b2 to b1, instead of b1 to b2
-        return {
-            "normal": result.normal.times(-1),
-            "depth": result.depth,
-        }
+        result.normal.multiplyBy(-1)
+
+        return result
     else if b1.shape isa shapes.CircleShape and b2.shape isa shapes.CircleShape then
         // Circle-circle collision
         return testCircleCircle(b1, b2)
