@@ -31,18 +31,14 @@ createCircle = function(x, y, tint, scale)
     return body
 end function
 
-b1 = createCircle(300, 200, color.blue, 2)
+b1 = createBlock(600, 300, color.blue, 2)
 b1.setStatic true
+b1.rotation = 20
 
-b2 = createCircle(300, 400, color.orange, 1)
+b2 = createCircle(800, 600, color.orange, 1)
 
-// ground = new Sprite
-// ground.image = file.loadImage("/sys/pics/Block4.png")
-// ground.scale = 4
-// ground.tint = color.yellow
-// sprDisp.sprites.push ground
-// ground.x = 480; ground.y = -55
-// physics.initPhys ground, true
+ground = createBlock(480, -55, color.yellow, 4)
+ground.setStatic true
 
 control = b2
 

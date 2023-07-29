@@ -14,9 +14,13 @@ axes = function(p, axes, length=500)
     end for
 end function
 
+point = function(p, r=2)
+    drawDisplay.fillEllipse p.x - r, p.y - r, r * 2, r * 2
+end function
+
 points = function(points, r=2)
     for p in points
-        drawDisplay.fillEllipse p.x - r, p.y - r, r * 2, r * 2
+        point p, r
     end for
 end function
 

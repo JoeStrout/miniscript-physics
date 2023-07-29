@@ -1,3 +1,5 @@
+import "mathUtil"
+
 list.x = function
     return self[0]
 end function
@@ -27,6 +29,17 @@ end function
 // Returns a vector perpendicular to this one
 list.normal = function
     return [-self[1], self[0]]
+end function
+
+list.clamp = function(min, max)
+    return [
+        mathUtil.clamp(self[0], min[0], max[0]),
+        mathUtil.clamp(self[1], min[1], max[1]),
+    ]
+end function
+
+list.equals = function(other)
+    return self[0] == other[0] and self[1] == other[1]
 end function
 
 list.draw = function(start, length, display)
