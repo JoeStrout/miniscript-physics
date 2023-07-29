@@ -1,4 +1,4 @@
-enabled = false
+enabled = true
 
 if enabled then
     display(2).mode = displayMode.pixel
@@ -14,13 +14,13 @@ axes = function(p, axes, length=500)
     end for
 end function
 
-point = function(p, r=2)
-    drawDisplay.fillEllipse p.x - r, p.y - r, r * 2, r * 2
+point = function(p, color, r=2)
+    drawDisplay.fillEllipse p.x - r, p.y - r, r * 2, r * 2, color
 end function
 
-points = function(points, r=2)
+points = function(points, color, r=2)
     for p in points
-        point p, r
+        point p, color, r
     end for
 end function
 

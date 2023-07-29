@@ -2,6 +2,7 @@ import "mathUtil"
 
 import "vector"
 import "debugDraw"
+import "satClipping"
 
 getRectangleVertices = function(body)
     hw = body.shape.width / 2
@@ -46,12 +47,15 @@ projectPoints = function(axis, points)
         end if
     end for
 
-    return { "min": min, "max": max }
+    return {
+        "min": min,
+        "max": max,
+    }
 end function
 
 findOverlapPoints = function(axes, points1, points2)
-    normal = null
-    minDepth = 0
+    minDepth = 1 / 0
+    result = false
 
     for axis in axes
         proj1 = projectPoints(axis, points1)
@@ -62,23 +66,27 @@ findOverlapPoints = function(axes, points1, points2)
             return false
         end if
 
-        depth1 = proj2.max - proj1.min
-        depth2 = proj1.max - proj2.min
+        depth1 = proj1.max - proj2.min
+        depth2 = proj2.max - proj1.min
 
         if depth1 > depth2 then
             depth = depth2
+            axis = axis.times(-1)
         else
             depth = depth1
-            axis = axis.times(-1)
         end if
 
-        if normal == null or depth < minDepth then
-            normal = axis
+        if depth < minDepth then
             minDepth = depth
+
+            result = {
+                "normal": axis,
+                "depth": depth,
+            }
         end if
     end for
 
-    return { "normal": normal, "depth": minDepth }
+    return result
 end function
 
 testRectangles = function(b1, b2)
@@ -118,6 +126,12 @@ testRectangles = function(b1, b2)
 
         // invert direction because overlap2 tests b2 against b1, instead of b1 against b2
         overlap.normal = overlap2.normal.times(-1)
+    end if
+
+    clipped = satClipping.clipPoints(points1, points2, overlap.normal)
+
+    if debugDraw.enabled then
+        debugDraw.points clipped, color.yellow, 6
     end if
 
     if debugDraw.enabled then
