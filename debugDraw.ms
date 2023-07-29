@@ -1,4 +1,4 @@
-enabled = true
+enabled = false
 
 if enabled then
     display(2).mode = displayMode.pixel
@@ -28,6 +28,25 @@ circle = function(x, y, r, color, width)
     drawDisplay.drawEllipse x - r, y - r, r * 2, r * 2, color, width
 end function
 
-vector = function(start, dir, color, width)
+line = function(start, dir, color, width)
     drawDisplay.line start.x, start.y, start.x + dir.x, start.y + dir.y, color, width
+end function
+
+arrowLine = function(start, dir, color, width)
+    if dir.x == 0 and dir.y == 0 then return
+
+    _end = start.plus(dir)
+
+    w = 5
+    h = w * sqrt(3)
+
+    u = _end.sub(start).normalized
+    v = u.normal
+
+    v1 = _end.sub(u.times(h)).plus(v.times(w))
+    v2 = _end.sub(u.times(h)).sub(v.times(w))
+
+    drawDisplay.line start.x, start.y, _end.x, _end.y, color, width
+    drawDisplay.line _end.x, _end.y, v1.x, v1.y, color, width
+    drawDisplay.line _end.x, _end.y, v2.x, v2.y, color, width
 end function

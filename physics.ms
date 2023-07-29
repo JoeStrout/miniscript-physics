@@ -12,7 +12,9 @@ import "debugDraw"
 ensureImport "shapes"
 
 // Global physics constants
-gravity = 300		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
+gravity = 200		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
+correctionFactor = 0.2 // usually 0.2 to 0.8
+correctionSlop = 0.1  // usually 0.01 to 0.1
 
 // Function to find the rotational inertia of a physics body.
 rotInertia = function(body, density, scale)
@@ -67,7 +69,6 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
 
     calcMass = body.shape.area * density
 
-    body.mass = calcMass
     body.static = false
     body.elasticity = elasticity
     body.vx = 0
@@ -86,11 +87,27 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
         body.static = s
 
         if s then
-            body.mass = 1 / 0
+            body.mass = 0
+            body.invMass = 0
         else
             body.mass = calcMass
+            body.invMass = 1 / calcMass
         end if
     end function
+
+    body.setStatic false
+end function
+
+correctPositions = function(b1, b2, depth, normal)
+    correction = normal.times((mathUtil.max(depth - correctionSlop, 0) / (b1.invMass + b2.invMass)) * correctionFactor)
+    
+    corr1 = correction.times(b1.invMass)
+    b1.x -= corr1.x
+    b1.y -= corr1.y
+
+    corr2 = correction.times(b2.invMass)
+    b2.x += corr2.x
+    b2.y += corr2.y
 end function
 
 collide = function(b1, b2)
@@ -100,39 +117,28 @@ collide = function(b1, b2)
 
     if overlap then
         if debugDraw.enabled then
-            debugDraw.vector b1.pos, overlap.normal.times(-overlap.depth), color.red, 4
-            debugDraw.vector b2.pos, overlap.normal.times(overlap.depth), color.red, 4
+            debugDraw.arrowLine b1.pos, overlap.normal.times(-overlap.depth), color.red, 2
+            debugDraw.arrowLine b2.pos, overlap.normal.times(overlap.depth), color.red, 2
         end if
-
-        // Calculate impulse vector needed to push b1 out of b2
 
         elasticity = mathUtil.min(b1.elasticity, b2.elasticity)
         vrel = [b1.vx - b2.vx, b1.vy - b2.vy]
 
-        impulseMagnitude = -(1 + elasticity) * vrel.dot(overlap.normal) / ((1 / b1.mass) + (1 / b2.mass))
+        vrelAlongNormal = vrel.dot(overlap.normal)
+        if vrelAlongNormal < 0 then return
+
+        impulseMagnitude = -(1 + elasticity) * vrelAlongNormal / (b1.invMass + b2.invMass)
         impulse = overlap.normal.times(impulseMagnitude)
 
-        // First push objects out of the way to prevent them from overlapping
-        displacement = overlap.normal.times(overlap.depth)
+        dv1 = impulse.times(-b1.invMass)
+        b1.vx -= dv1.x
+        b1.vy -= dv1.y
 
-        // If neither object is static we push each one out of the way by half of the displacement.
-        // If one of them is static we push the non-static object by the entire displacement.
+        dv2 = impulse.times(-b2.invMass)
+        b2.vx += dv2.x
+        b2.vy += dv2.y
 
-        if b1.static then
-            b2.x += displacement.x
-            b2.y += displacement.y
-        else if b2.static then
-            b1.x -= displacement.x
-            b1.y -= displacement.y
-        else
-            b1.x -= displacement.x / 2
-            b1.y -= displacement.y / 2
-            b2.x += displacement.x / 2
-            b2.y += displacement.y / 2
-        end if
-
-        b1.forces.add impulse
-        b2.forces.add impulse.times(-1)
+        correctPositions b1, b2, overlap.depth, overlap.normal
     end if
 end function
 
@@ -155,7 +161,14 @@ calcCollisions = function(bodies)
 end function
 
 updateBody = function(body, dt=0.01)
-    if body.static then return
+    if body.static then 
+        body.vx = 0
+        body.vy = 0
+    end if
+
+    if debugDraw.enabled then
+        debugDraw.arrowLine body.pos, body.forces.times(5), color.green, 3
+    end if
 
     // F = m*a => a = F/m
     accelX = body.forces.x / body.mass
@@ -163,6 +176,13 @@ updateBody = function(body, dt=0.01)
 
     body.vx += accelX
     body.vy += accelY
+
+    if abs(body.vx) < 0.01 then
+        body.vx = 0
+    end if
+    if abs(body.vy) < 0.01 then
+        body.vy = 0
+    end if
 
     // ToDo: drag
 

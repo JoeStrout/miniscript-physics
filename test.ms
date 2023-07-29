@@ -5,6 +5,8 @@ import "shapes"
 
 sprDisp = display(4)
 
+control = null
+
 createBlock = function(x, y, tint, scale)
     body = new Sprite
     body.image = file.loadImage("/sys/pics/Block4.png")
@@ -18,7 +20,7 @@ createBlock = function(x, y, tint, scale)
     return body
 end function
 
-createCircle = function(x, y, tint, scale)
+createCircle = function(x, y, tint, scale=1)
     body = new Sprite
     body.image = file.loadImage("/sys/pics/shapes/Circle.png")
     body.scale = scale
@@ -31,43 +33,70 @@ createCircle = function(x, y, tint, scale)
     return body
 end function
 
-b1 = createBlock(600, 300, color.blue, 2)
-b1.setStatic true
-b1.rotation = 20
+createWalls = function
+    b = createBlock(480, -55, color.yellow, 4)
+    b.setStatic true
 
-for i in range(20)
-    clr = color.rgb(rnd * 255, rnd * 255, rnd * 255)
+    b = createBlock(-75, 480, color.yellow, 4)
+    b.rotation = 90
+    b.setStatic true
 
-    createCircle(display(5).width * rnd, display(5).height * rnd, clr, 1)
-end for
+    b = createBlock(1070, 480, color.yellow, 4)
+    b.rotation = 90
+    b.setStatic true
+end function
 
-b = createBlock(480, -55, color.yellow, 4)
-b.setStatic true
+scenarioBalls = function
+    createWalls
 
-b = createBlock(-75, 480, color.yellow, 4)
-b.rotation = 90
-b.setStatic true
+    for i in range(25)
+        clr = color.rgb(rnd * 255, rnd * 255, rnd * 255)
 
-b = createBlock(1070, 480, color.yellow, 4)
-b.rotation = 90
-b.setStatic true
+        createCircle(display(5).width * rnd, display(5).height * rnd, clr, 1)
+    end for
+end function
 
-control = b1
+scenarioBallsCollision = function
+    createWalls
+
+    c = createCircle(300, 500, color.yellow)
+    c.vx = 200
+
+    c = createCircle(600, 500, color.green)
+    c.vx = -200
+end function
+
+scenarioBallSlope = function
+    b = createBlock(400, 400, color.blue, 1)
+    b.setStatic true
+    b.rotation = -20
+
+    b = createBlock(620, 200, color.blue, 1)
+    b.setStatic true
+    b.rotation = 20
+
+    createCircle(350, 500, color.yellow, 1)
+end function
+
+scenarioBallSlope
 
 dt = 1/60
 while not key.available
     physics.updateMany sprDisp.sprites, dt
 
-    if mouse.button(0) then
-        control.x = mouse.x
-        control.y = mouse.y
-        control.vx = 0
-        control.vy = 0
+    if control != null then
+        if mouse.button(0) then
+            control.x = mouse.x
+            control.y = mouse.y
+            control.vx = 0
+            control.vy = 0
+        end if
+
+        if mouse.button(1) then
+            control.rotation = control.rotation + 1
+        end if
     end if
 
-    if mouse.button(1) then
-        control.rotation = control.rotation + 1
-    end if
     yield
 end while
 key.clear
