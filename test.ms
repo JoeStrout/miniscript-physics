@@ -34,14 +34,14 @@ createCircle = function(x, y, tint, scale=1)
 end function
 
 createWalls = function
-    b = createBlock(480, -55, color.yellow, 4)
+    b = createBlock(480, -75, color.yellow, 4)
     b.setStatic true
 
-    b = createBlock(-75, 480, color.yellow, 4)
+    b = createBlock(-130, 480, color.yellow, 4)
     b.rotation = 90
     b.setStatic true
 
-    b = createBlock(1070, 480, color.yellow, 4)
+    b = createBlock(1090, 480, color.yellow, 4)
     b.rotation = 90
     b.setStatic true
 end function
@@ -78,7 +78,7 @@ scenarioBallSlope = function
     createCircle(350, 500, color.yellow, 1)
 end function
 
-scenarioBallSlope
+scenarioBalls
 
 dt = 1/60
 while not key.available

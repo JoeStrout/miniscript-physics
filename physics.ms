@@ -164,6 +164,7 @@ updateBody = function(body, dt=0.01)
     if body.static then 
         body.vx = 0
         body.vy = 0
+        return
     end if
 
     if debugDraw.enabled then
