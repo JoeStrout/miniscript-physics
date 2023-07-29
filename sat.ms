@@ -131,13 +131,10 @@ testRectangles = function(b1, b2)
     clipped = satClipping.clipPoints(points1, points2, overlap.normal)
 
     if debugDraw.enabled then
-        debugDraw.points clipped, color.yellow, 6
-    end if
-
-    if debugDraw.enabled then
         dir = overlap.normal.times(-overlap.depth)
         debugDraw.drawDisplay.line b1.x, b1.y, b1.x + dir.x, b1.y + dir.y, color.red, 4
     end if
 
+    overlap.points = clipped
     return overlap
 end function

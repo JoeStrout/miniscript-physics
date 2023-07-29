@@ -22,9 +22,14 @@ testCircleCircle = function(b1, b2)
         return false
     end if
 
+    depth = r1 + r2 - dist
+
+    midpoint = normal.normalized.times(r1 - depth / 2).plus(b1.pos)
+
     return {
         "normal": normal.normalized,
-        "depth": r1 + r2 - dist,
+        "depth": depth,
+        "points": [midpoint],
     }
 end function
 
@@ -46,8 +51,10 @@ testCircleBox = function(circle, box)
     closestPoint = relCirclePos.clamp(boxSize.times(-1), boxSize)
     circleDist = relCirclePos.sub(closestPoint).magnitude
 
+    closestPointAbs = closestPoint.rotatedBy(boxRot).plus(box.pos)
+
     if debugDraw.enabled then
-        debugDraw.point closestPoint.rotatedBy(boxRot).plus(box.pos)
+        debugDraw.point closestPointAbs
     end if
 
     if relCirclePos.equals(closestPoint) then
@@ -74,6 +81,7 @@ testCircleBox = function(circle, box)
         return {
             "normal": normal.rotatedBy(boxRot),
             "depth": smallest + circle.shape.radius,
+            "points": [closestPointAbs],
         }
     end if
 
@@ -81,6 +89,7 @@ testCircleBox = function(circle, box)
         return {
             "normal": closestPoint.sub(relCirclePos).normalized.rotatedBy(boxRot),
             "depth": circle.shape.radius - circleDist,
+            "points": [closestPointAbs],
         }
     end if
 
@@ -100,6 +109,7 @@ collideBodies = function(b1, b2)
         result = testCircleBox(b2, b1)
         if not result then return false
 
+        // Flip the normal because we are testing b2 to b1, instead of b1 to b2
         return {
             "normal": result.normal.times(-1),
             "depth": result.depth,
