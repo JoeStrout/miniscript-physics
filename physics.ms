@@ -14,8 +14,6 @@ ensureImport "shapes"
 // Global physics constants
 gravity = 300		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
 
-gravityForce = [0, -gravity]
-
 // Function to find the rotational inertia of a physics body.
 rotInertia = function(body, density, scale)
     if body.localBounds isa list then
@@ -78,7 +76,7 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
     body.rotInertia = rotInertia(body, density, scale)
     body.rotSpeed = 0
     body.rotDrag = 0.01
-    body.forces = []
+    body.forces = [0, 0]
 
     body.pos = function
         return [body.x, body.y]
@@ -133,14 +131,14 @@ collide = function(b1, b2)
             b2.y += displacement.y / 2
         end if
 
-        b1.forces.push impulse
-        b2.forces.push impulse.times(-1)
+        b1.forces.add impulse
+        b2.forces.add impulse.times(-1)
     end if
 end function
 
 resetForces = function(bodies)
     for b in bodies
-        b.forces = [gravityForce]
+        b.forces = [0, -gravity]
     end for
 end function
 
@@ -159,14 +157,9 @@ end function
 updateBody = function(body, dt=0.01)
     if body.static then return
 
-    accelX = 0
-    accelY = 0
-
     // F = m*a => a = F/m
-    for f in body.forces
-        accelX += f.x / body.mass
-        accelY += f.y / body.mass
-    end for
+    accelX = body.forces.x / body.mass
+    accelY = body.forces.y / body.mass
 
     body.vx += accelX
     body.vy += accelY
@@ -175,7 +168,7 @@ updateBody = function(body, dt=0.01)
 
     body.x = body.x + body.vx * dt
     body.y = body.y + body.vy * dt
-    
+
     body.rotation = body.rotation + body.rotSpeed * dt
 end function
 

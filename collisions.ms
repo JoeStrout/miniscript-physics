@@ -52,9 +52,6 @@ testCircleBox = function(circle, box)
 
     if relCirclePos.equals(closestPoint) then
         // Circle is inside box
-        print "inside"
-        print relCirclePos
-        print boxSize
 
         penLeft = relCirclePos.x + boxSize.x
         penRight = -relCirclePos.x + boxSize.x
