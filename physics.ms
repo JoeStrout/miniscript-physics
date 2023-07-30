@@ -78,6 +78,8 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
     body.rotSpeed = 0
     body.rotDrag = 0.01
     body.forces = [0, 0]
+    body.staticFriction = 0.2
+    body.dynamicFriction = 0.1
 
     body.pos = function
         return [body.x, body.y]
@@ -94,8 +96,12 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
             body.invMass = 1 / calcMass
         end if
     end function
-
     body.setStatic false
+
+    body.applyVel = function(v)
+        body.vx += v[0]
+        body.vy += v[1]
+    end function
 end function
 
 correctPositions = function(b1, b2, depth, normal)
@@ -116,27 +122,50 @@ collide = function(b1, b2)
     overlap = collisions.collideBodies(b1, b2)
 
     if overlap then
+        normal = overlap.normal
+
         if debugDraw.enabled then
-            debugDraw.arrowLine b1.pos, overlap.normal.times(-overlap.depth), color.red, 2
-            debugDraw.arrowLine b2.pos, overlap.normal.times(overlap.depth), color.red, 2
+            debugDraw.arrowLine b1.pos, normal.times(-overlap.depth), color.red, 2
+            debugDraw.arrowLine b2.pos, normal.times(overlap.depth), color.red, 2
         end if
 
+        // Apply normal response impulse
+
         elasticity = mathUtil.min(b1.elasticity, b2.elasticity)
-        vrel = [b1.vx - b2.vx, b1.vy - b2.vy]
+        vrel = [b2.vx - b1.vx, b2.vy - b1.vy]
 
-        vrelAlongNormal = vrel.dot(overlap.normal)
-        if vrelAlongNormal < 0 then return
+        vrelAlongNormal = vrel.dot(normal)
+        if vrelAlongNormal > 0 then return
 
-        impulseMagnitude = -(1 + elasticity) * vrelAlongNormal / (b1.invMass + b2.invMass)
-        impulse = overlap.normal.times(impulseMagnitude)
+        j = -(1 + elasticity) * vrelAlongNormal / (b1.invMass + b2.invMass)
+        impulse = normal.times(j)
 
-        dv1 = impulse.times(-b1.invMass)
-        b1.vx -= dv1.x
-        b1.vy -= dv1.y
+        b1.applyVel impulse.times(-b1.invMass)
+        b2.applyVel impulse.times(b2.invMass)
 
-        dv2 = impulse.times(-b2.invMass)
-        b2.vx += dv2.x
-        b2.vy += dv2.y
+        // Apply friction impulse
+
+        vrel = [b2.vx - b1.vx, b2.vy - b1.vy]
+        tangent = normal.normal
+
+        if debugDraw.enabled then
+            debugDraw.arrowLine b1.pos, tangent.times(50), color.green, 2
+            debugDraw.arrowLine b2.pos, tangent.times(50), color.green, 2
+        end if
+
+        jt = -vrel.dot(tangent) / (b1.invMass + b2.invMass)
+
+        mu = sqrt(b1.staticFriction ^ 2 + b2.staticFriction ^ 2)
+
+        if abs(jt) < j * mu then
+            frictionImpulse = tangent.times(jt)
+        else
+            dynamicFriction = sqrt(b1.dynamicFriction ^ 2 + b2.dynamicFriction ^ 2)
+            frictionImpulse = tangent.times(-j * dynamicFriction)
+        end if
+
+        b1.applyVel frictionImpulse.times(-b1.invMass)
+        b2.applyVel frictionImpulse.times(b2.invMass)
 
         correctPositions b1, b2, overlap.depth, overlap.normal
     end if

@@ -46,6 +46,7 @@ createWalls = function
     b.setStatic true
 end function
 
+// Make sure debug drawing is disabled before running this
 scenarioBalls = function
     createWalls
 
@@ -64,6 +65,7 @@ scenarioBallsCollision = function
 
     c = createCircle(600, 500, color.green)
     c.vx = -200
+    globals.control = c
 end function
 
 scenarioBallSlope = function
@@ -75,7 +77,7 @@ scenarioBallSlope = function
     b.setStatic true
     b.rotation = 20
 
-    createCircle(350, 500, color.yellow, 1)
+    globals.control = createCircle(350, 500, color.yellow, 1)
 end function
 
 scenarioBalls
