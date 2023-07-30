@@ -12,7 +12,7 @@ import "debugDraw"
 ensureImport "shapes"
 
 // Global physics constants
-gravity = 200		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
+gravity = 12000		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
 correctionFactor = 0.2 // usually 0.2 to 0.8
 correctionSlop = 0.01  // usually 0.01 to 0.1
 
@@ -175,8 +175,8 @@ updateBody = function(body, dt=0.01)
     accelX = body.forces.x / body.mass
     accelY = body.forces.y / body.mass
 
-    body.vx += accelX
-    body.vy += accelY
+    body.vx += accelX * dt
+    body.vy += accelY * dt
 
     if abs(body.vx) < 0.01 then
         body.vx = 0
