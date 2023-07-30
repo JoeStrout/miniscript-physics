@@ -12,7 +12,7 @@ import "debugDraw"
 ensureImport "shapes"
 
 // Global physics constants
-gravity = 12000		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
+gravity = 1000		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
 correctionFactor = 0.3 // usually 0.2 to 0.8
 correctionSlop = 0.01  // usually 0.01 to 0.1
 
@@ -177,7 +177,7 @@ end function
 
 resetForces = function(bodies)
     for b in bodies
-        b.forces = [0, -gravity]
+        b.forces = [0, -gravity * b.mass]
     end for
 end function
 
