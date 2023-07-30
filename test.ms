@@ -37,13 +37,15 @@ createWalls = function
     b = createBlock(480, -75, color.yellow, 4)
     b.setStatic true
 
-    b = createBlock(-130, 480, color.yellow, 4)
-    b.rotation = 90
-    b.setStatic true
+    l = createBlock(-130, 480, color.yellow, 4)
+    l.rotation = 90
+    l.setStatic true
 
-    b = createBlock(1090, 480, color.yellow, 4)
-    b.rotation = 90
-    b.setStatic true
+    r = createBlock(1090, 480, color.yellow, 4)
+    r.rotation = 90
+    r.setStatic true
+
+    return { "bottom": b, "left": l, "right": r }
 end function
 
 // Make sure debug drawing is disabled before running this
@@ -61,10 +63,10 @@ scenarioBallsCollision = function
     createWalls
 
     c = createCircle(300, 500, color.yellow)
-    c.vx = 200
+    c.vel[0] = 200
 
     c = createCircle(600, 500, color.green)
-    c.vx = -200
+    c.vel[0] = -200
     globals.control = c
 end function
 
@@ -80,6 +82,34 @@ scenarioBallSlope = function
     globals.control = createCircle(350, 500, color.yellow, 1)
 end function
 
+scenarioOneBall = function
+    walls = createWalls
+    walls.left.elasticity = 1
+    walls.right.elasticity = 1
+
+    c = createCircle(600, 300, color.green)
+    c.vel[0] = -500
+    c.elasticity = 1
+    globals.control = c
+end function
+
+scenarioSqueeze = function
+    b = createBlock(480, -75, color.yellow, 4)
+    b.setStatic true
+
+    b = createBlock(300, 480, color.yellow, 4)
+    b.rotation = 90
+    b.setStatic true
+
+    b = createBlock(700, 480, color.yellow, 4)
+    b.rotation = 90
+    b.setStatic true
+
+    createCircle(495, 300, color.green)
+    createCircle(498, 400, color.orange)
+    createCircle(492, 500, color.red)
+end function
+
 scenarioBalls
 
 dt = 1/60
@@ -90,8 +120,8 @@ while not key.available
         if mouse.button(0) then
             control.x = mouse.x
             control.y = mouse.y
-            control.vx = 0
-            control.vy = 0
+            control.vel[0] = 0
+            control.vel[1] = 0
         end if
 
         if mouse.button(1) then

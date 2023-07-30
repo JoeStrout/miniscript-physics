@@ -13,7 +13,7 @@ ensureImport "shapes"
 
 // Global physics constants
 gravity = 12000		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
-correctionFactor = 0.2 // usually 0.2 to 0.8
+correctionFactor = 0.3 // usually 0.2 to 0.8
 correctionSlop = 0.01  // usually 0.01 to 0.1
 
 // Function to find the rotational inertia of a physics body.
@@ -42,6 +42,7 @@ rotInertia = function(body, density, scale)
     end if
 end function	
 
+globals.lastId = 0
 
 initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
     // if our "body" doesn't have a localBounds, but it does have an
@@ -69,10 +70,11 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
 
     calcMass = body.shape.area * density
 
-    body.static = false
+    body.id = lastId + 1
+    globals.lastId += 1
+
     body.elasticity = elasticity
-    body.vx = 0
-    body.vy = 0
+    body.vel = [0, 0]
     body.drag = 0.01
     body.rotInertia = rotInertia(body, density, scale)
     body.rotSpeed = 0
@@ -85,9 +87,11 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
         return [body.x, body.y]
     end function
 
-    body.setStatic = function(s)
-        body.static = s
+    body.static = function
+        return body.invMass == 0
+    end function
 
+    body.setStatic = function(s)
         if s then
             body.mass = 0
             body.invMass = 0
@@ -99,14 +103,14 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
     body.setStatic false
 
     body.applyVel = function(v)
-        body.vx += v[0]
-        body.vy += v[1]
+        body.vel[0] += v[0]
+        body.vel[1] += v[1]
     end function
 end function
 
 correctPositions = function(b1, b2, depth, normal)
     correction = normal.times((mathUtil.max(depth - correctionSlop, 0) / (b1.invMass + b2.invMass)) * correctionFactor)
-    
+
     corr1 = correction.times(b1.invMass)
     b1.x -= corr1.x
     b1.y -= corr1.y
@@ -120,55 +124,55 @@ collide = function(b1, b2)
     if b1.static and b2.static then return
 
     overlap = collisions.collideBodies(b1, b2)
+    if not overlap then return
 
-    if overlap then
-        normal = overlap.normal
+    normal = overlap.normal
 
-        if debugDraw.enabled then
-            debugDraw.arrowLine b1.pos, normal.times(-overlap.depth), color.red, 2
-            debugDraw.arrowLine b2.pos, normal.times(overlap.depth), color.red, 2
-        end if
-
-        // Apply normal response impulse
-
-        elasticity = mathUtil.min(b1.elasticity, b2.elasticity)
-        vrel = [b2.vx - b1.vx, b2.vy - b1.vy]
-
-        vrelAlongNormal = vrel.dot(normal)
-        if vrelAlongNormal > 0 then return
-
-        j = -(1 + elasticity) * vrelAlongNormal / (b1.invMass + b2.invMass)
-        impulse = normal.times(j)
-
-        b1.applyVel impulse.times(-b1.invMass)
-        b2.applyVel impulse.times(b2.invMass)
-
-        // Apply friction impulse
-
-        vrel = [b2.vx - b1.vx, b2.vy - b1.vy]
-        tangent = normal.normal
-
-        if debugDraw.enabled then
-            debugDraw.arrowLine b1.pos, tangent.times(50), color.green, 2
-            debugDraw.arrowLine b2.pos, tangent.times(50), color.green, 2
-        end if
-
-        jt = -vrel.dot(tangent) / (b1.invMass + b2.invMass)
-
-        mu = sqrt(b1.staticFriction ^ 2 + b2.staticFriction ^ 2)
-
-        if abs(jt) < j * mu then
-            frictionImpulse = tangent.times(jt)
-        else
-            dynamicFriction = sqrt(b1.dynamicFriction ^ 2 + b2.dynamicFriction ^ 2)
-            frictionImpulse = tangent.times(-j * dynamicFriction)
-        end if
-
-        b1.applyVel frictionImpulse.times(-b1.invMass)
-        b2.applyVel frictionImpulse.times(b2.invMass)
-
-        correctPositions b1, b2, overlap.depth, overlap.normal
+    if debugDraw.enabled then
+        debugDraw.arrowLine b1.pos, normal.times(-overlap.depth), color.red, 2
+        debugDraw.arrowLine b2.pos, normal.times(overlap.depth), color.red, 2
     end if
+
+    // Apply normal response impulse
+
+    vrel = b2.vel.sub(b1.vel)
+
+    vrelAlongNormal = vrel.dot(normal)
+    if vrelAlongNormal > 0 then return
+
+    e = mathUtil.min(b1.elasticity, b2.elasticity)
+
+    j = -(1 + e) * vrelAlongNormal / (b1.invMass + b2.invMass)
+    impulse = normal.times(j)
+
+    b1.applyVel impulse.times(-b1.invMass)
+    b2.applyVel impulse.times(b2.invMass)
+
+    // Apply friction impulse
+
+    vrel = b2.vel.sub(b1.vel)
+    tangent = vrel.sub(normal.times(vrel.dot(normal))).normalized
+
+    if debugDraw.enabled then
+        debugDraw.arrowLine b1.pos, tangent.times(50), color.green, 2
+        debugDraw.arrowLine b2.pos, tangent.times(50), color.green, 2
+    end if
+
+    jt = -vrel.dot(tangent) / (b1.invMass + b2.invMass)
+
+    mu = sqrt(b1.staticFriction ^ 2 + b2.staticFriction ^ 2)
+
+    if abs(jt) < j * mu then
+        frictionImpulse = tangent.times(jt)
+    else
+        dynamicFriction = sqrt(b1.dynamicFriction ^ 2 + b2.dynamicFriction ^ 2)
+        frictionImpulse = tangent.times(-j * dynamicFriction)
+    end if
+
+    b1.applyVel frictionImpulse.times(-b1.invMass)
+    b2.applyVel frictionImpulse.times(b2.invMass)
+
+    correctPositions b1, b2, overlap.depth, overlap.normal
 end function
 
 resetForces = function(bodies)
@@ -191,8 +195,8 @@ end function
 
 updateBody = function(body, dt=0.01)
     if body.static then 
-        body.vx = 0
-        body.vy = 0
+        body.vel[0] = 0
+        body.vel[1] = 0
         return
     end if
 
@@ -204,28 +208,26 @@ updateBody = function(body, dt=0.01)
     accelX = body.forces.x / body.mass
     accelY = body.forces.y / body.mass
 
-    body.vx += accelX * dt
-    body.vy += accelY * dt
+    body.vel[0] += accelX * dt
+    body.vel[1] += accelY * dt
 
-    if abs(body.vx) < 0.01 then
-        body.vx = 0
+    if abs(body.vel[0]) < 0.01 then
+        body.vel[0] = 0
     end if
-    if abs(body.vy) < 0.01 then
-        body.vy = 0
+    if abs(body.vel[1]) < 0.01 then
+        body.vel[1] = 0
     end if
 
     // ToDo: drag
 
-    body.x = body.x + body.vx * dt
-    body.y = body.y + body.vy * dt
+    body.x = body.x + body.vel[0] * dt
+    body.y = body.y + body.vel[1] * dt
 
     body.rotation = body.rotation + body.rotSpeed * dt
 end function
 
 updateMany = function(bodies, dt=0.01)
-    if debugDraw.enabled then
-        debugDraw.drawDisplay.clear
-    end if
+    debugDraw.drawDisplay.clear
 
     display(3).clear
     display(3).column = 0

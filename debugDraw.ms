@@ -1,11 +1,9 @@
 enabled = false
 
-if enabled then
-    display(2).mode = displayMode.pixel
+display(2).mode = displayMode.pixel
 
-    drawDisplay = display(2)
-    drawDisplay.clear
-end if
+drawDisplay = display(2)
+drawDisplay.clear
 
 axes = function(p, axes, length=500)
     for axis in axes

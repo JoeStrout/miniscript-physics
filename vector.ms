@@ -19,6 +19,8 @@ end function
 
 list.normalized = function
     mag = self.magnitude
+    if mag == 0 then return [0, 0]
+
     return [self[0] / mag, self[1] / mag]
 end function
 
