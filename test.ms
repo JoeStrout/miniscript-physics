@@ -55,7 +55,7 @@ scenarioBalls = function
     for i in range(25)
         clr = color.rgb(rnd * 255, rnd * 255, rnd * 255)
 
-        createCircle(display(5).width * rnd, display(5).height * rnd, clr, 1)
+        createCircle display(5).width * rnd, display(5).height * rnd, clr, 1
     end for
 end function
 
@@ -105,9 +105,33 @@ scenarioSqueeze = function
     b.rotation = 90
     b.setStatic true
 
-    createCircle(495, 300, color.green)
-    createCircle(498, 400, color.orange)
-    createCircle(492, 500, color.red)
+    createCircle 495, 300, color.green
+    createCircle 498, 400, color.orange
+    createCircle 492, 500, color.red
+end function
+
+scenarioDragRace = function
+    createWalls
+
+    balls = 10
+    for i in range(balls - 1)
+        clr = color.rgb(rnd * 255, rnd * 255, rnd * 255)
+
+        createCircle display(5).width * (i / balls) + 50, 600, clr, 1 - (i / balls) * 0.5
+    end for
+end function
+
+scenarioCannonBall = function
+    createWalls
+
+    impulse = 1500
+
+    c = createCircle(100, 400, color.green, 1)
+    c.vel[0] = impulse
+
+    c = createCircle(100, 500, color.red, 1)
+    c.vel[0] = impulse
+    c.dragCoef = 0
 end function
 
 scenarioBalls

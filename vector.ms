@@ -28,6 +28,10 @@ list.magnitude = function
     return sqrt(self[0] ^ 2 + self[1] ^ 2)
 end function
 
+list.magnitudeSq = function
+    return self[0] ^ 2 + self[1] ^ 2
+end function
+
 // Returns a vector perpendicular to this one
 list.normal = function
     return [-self[1], self[0]]

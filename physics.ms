@@ -15,6 +15,7 @@ ensureImport "shapes"
 gravity = 1000		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
 correctionFactor = 0.3 // usually 0.2 to 0.8
 correctionSlop = 0.01  // usually 0.01 to 0.1
+dragCoefficient = 0.0002
 
 // Function to find the rotational inertia of a physics body.
 rotInertia = function(body, density, scale)
@@ -82,6 +83,7 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
     body.forces = [0, 0]
     body.staticFriction = 0.2
     body.dynamicFriction = 0.1
+    body.dragCoef = -0.5 * dragCoefficient
 
     body.pos = function
         return [body.x, body.y]
@@ -204,12 +206,13 @@ updateBody = function(body, dt=0.01)
         debugDraw.arrowLine body.pos, body.forces.times(5), color.green, 3
     end if
 
-    // F = m*a => a = F/m
-    accelX = body.forces.x / body.mass
-    accelY = body.forces.y / body.mass
+    // Apply drag forces
+    velMagSq = body.vel.magnitudeSq
+    body.forces.add body.vel.times(body.dragCoef * velMagSq)
 
-    body.vel[0] += accelX * dt
-    body.vel[1] += accelY * dt
+    // F = m*a => a = F/m
+    accel = body.forces.times(body.invMass * dt)
+    body.vel.add accel
 
     if abs(body.vel[0]) < 0.01 then
         body.vel[0] = 0
@@ -217,8 +220,6 @@ updateBody = function(body, dt=0.01)
     if abs(body.vel[1]) < 0.01 then
         body.vel[1] = 0
     end if
-
-    // ToDo: drag
 
     body.x = body.x + body.vel[0] * dt
     body.y = body.y + body.vel[1] * dt
