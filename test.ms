@@ -2,6 +2,9 @@ clear
 
 import "physics"
 import "shapes"
+import "debugDraw"
+
+debugDrawEnabled = false
 
 sprDisp = display(4)
 
@@ -48,9 +51,9 @@ createWalls = function
     return { "bottom": b, "left": l, "right": r }
 end function
 
-// Make sure debug drawing is disabled before running this
 scenarioBalls = function
     createWalls
+    debugDrawEnabled = false
 
     for i in range(25)
         clr = color.rgb(rnd * 255, rnd * 255, rnd * 255)
@@ -134,7 +137,7 @@ scenarioCannonBall = function
     c.dragCoef = 0
 end function
 
-scenarioBalls
+scenarioDragRace
 
 dt = 1/60
 while not key.available

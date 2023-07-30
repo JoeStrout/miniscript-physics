@@ -75,7 +75,7 @@ clipPoints = function(points1, points2, normal)
         flip = true
     end if
 
-    if debugDraw.enabled then
+    if debugDrawEnabled then
         debugDraw.drawDisplay.line ref.v1.x, ref.v1.y, ref.v2.x, ref.v2.y, color.red, 2
         debugDraw.drawDisplay.line inc.v1.x, inc.v1.y, inc.v2.x, inc.v2.y, color.green, 2
     end if
@@ -100,7 +100,7 @@ clipPoints = function(points1, points2, normal)
     i = cp.len - 1
     while i >= 0
         if refNorm.dot(cp[i]) - max < 0 then
-            if debugDraw.enabled then
+            if debugDrawEnabled then
                 debugDraw.point cp[i], color.red, 3
             end if
 

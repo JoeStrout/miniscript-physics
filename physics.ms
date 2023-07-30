@@ -130,7 +130,7 @@ collide = function(b1, b2)
 
     normal = overlap.normal
 
-    if debugDraw.enabled then
+    if debugDrawEnabled then
         debugDraw.arrowLine b1.pos, normal.times(-overlap.depth), color.red, 2
         debugDraw.arrowLine b2.pos, normal.times(overlap.depth), color.red, 2
     end if
@@ -155,7 +155,7 @@ collide = function(b1, b2)
     vrel = b2.vel.sub(b1.vel)
     tangent = vrel.sub(normal.times(vrel.dot(normal))).normalized
 
-    if debugDraw.enabled then
+    if debugDrawEnabled then
         debugDraw.arrowLine b1.pos, tangent.times(50), color.green, 2
         debugDraw.arrowLine b2.pos, tangent.times(50), color.green, 2
     end if
@@ -202,7 +202,7 @@ updateBody = function(body, dt=0.01)
         return
     end if
 
-    if debugDraw.enabled then
+    if debugDrawEnabled then
         debugDraw.arrowLine body.pos, body.forces.times(5), color.green, 3
     end if
 

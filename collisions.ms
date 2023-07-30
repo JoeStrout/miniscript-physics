@@ -9,7 +9,7 @@ testCircleCircle = function(b1, b2)
     r1 = b1.shape.radius
     r2 = b2.shape.radius
 
-    if debugDraw.enabled then
+    if debugDrawEnabled then
         debugDraw.drawDisplay.line b1.x, b1.y, b2.x, b2.y, color.gray
         debugDraw.circle b1.x, b1.y, r1
         debugDraw.circle b2.x, b2.y, r2
@@ -34,7 +34,7 @@ testCircleCircle = function(b1, b2)
 end function
 
 testCircleBox = function(circle, box)
-    if debugDraw.enabled then
+    if debugDrawEnabled then
         debugDraw.drawDisplay.line circle.x, circle.y, box.x, box.y, color.gray
 
         debugDraw.points sat.getRectangleVertices(box)
@@ -53,7 +53,7 @@ testCircleBox = function(circle, box)
 
     closestPointAbs = closestPoint.rotatedBy(boxRot).plus(box.pos)
 
-    if debugDraw.enabled then
+    if debugDrawEnabled then
         debugDraw.point closestPointAbs
     end if
 

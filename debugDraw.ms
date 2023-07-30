@@ -1,4 +1,6 @@
-enabled = false
+if not globals.hasIndex("debugDrawEnabled") then
+    globals.debugDrawEnabled = false
+end if
 
 display(2).mode = displayMode.pixel
 
