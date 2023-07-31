@@ -16,6 +16,7 @@ gravity = 1000		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 p
 correctionFactor = 0.3 // usually 0.2 to 0.8
 correctionSlop = 0.01  // usually 0.01 to 0.1
 dragCoefficient = 0.0002
+enableCollisionResponse = true
 
 // Function to find the rotational inertia of a physics body.
 rotInertia = function(body, density, scale)
@@ -134,6 +135,8 @@ collide = function(b1, b2)
         debugDraw.arrowLine b1.pos, normal.times(-overlap.depth), color.red, 2
         debugDraw.arrowLine b2.pos, normal.times(overlap.depth), color.red, 2
     end if
+
+    if not enableCollisionResponse then return
 
     // Apply normal response impulse
 

@@ -10,7 +10,7 @@ sprDisp = display(4)
 
 control = null
 
-createBlock = function(x, y, tint, scale)
+createBlock = function(x, y, tint, scale=1)
     body = new Sprite
     body.image = file.loadImage("/sys/pics/Block4.png")
     body.scale = scale
@@ -137,7 +137,19 @@ scenarioCannonBall = function
     c.dragCoef = 0
 end function
 
-scenarioDragRace
+scenarioTestCollisions = function
+    globals.debugDrawEnabled = true
+
+    physics.gravity = 0
+    physics.enableCollisionResponse = false
+
+    b = createBlock(400, 200, color.blue, 2)
+    b.rotation = 20
+
+    globals.control = createBlock(400, 400, color.yellow)
+end function
+
+scenarioTestCollisions
 
 dt = 1/60
 while not key.available
