@@ -1,120 +1,88 @@
-import "importUtil"
 import "mathUtil"
 
-import "sat"
-import "debugDraw"
-ensureImport "shapes"
+collisions = {}
 
-testCircleCircle = function(b1, b2)
-    r1 = b1.shape.radius
-    r2 = b2.shape.radius
+collisions.projectPoints = function(axis, points)
+    min = 0
+    hasMin = false
+    max = 0
+    hasMax = false
 
-    if debugDrawEnabled then
-        debugDraw.drawDisplay.line b1.x, b1.y, b2.x, b2.y, color.gray
-        debugDraw.circle b1.x, b1.y, r1
-        debugDraw.circle b2.x, b2.y, r2
-    end if
+    for p in points do
+        proj = p.dot(axis)
 
-    normal = b2.pos.sub(b1.pos)
-
-    dist = normal.magnitude
-    if dist > r1 + r2 then
-        return false
-    end if
-
-    depth = r1 + r2 - dist
-
-    midpoint = normal.normalized.times(r1 - depth / 2).plus(b1.pos)
+        if not hasMin or proj < min then
+            hasMin = true
+            min = proj
+        end if
+        if not hasMax or proj > max then
+            hasMax = true
+            max = proj
+        end if
+    end for
 
     return {
-        "normal": normal.normalized,
-        "depth": depth,
-        "points": [midpoint],
+        min = min,
+        max = max,
     }
 end function
 
-testCircleBox = function(circle, box)
-    if debugDrawEnabled then
-        debugDraw.drawDisplay.line circle.x, circle.y, box.x, box.y, color.gray
+collisions.findOverlapPoints = function(axes, points1, points2)
+    minDepth = 1 / 0
+    result = false
 
-        debugDraw.points sat.getRectangleVertices(box)
-        debugDraw.circle circle.x, circle.y, circle.shape.radius
-    end if
+    for axis in axes do
+        proj1 = collisions.projectPoints(axis, points1)
+        proj2 = collisions.projectPoints(axis, points2)
 
-    boxRot = mathUtil.degToRad(box.rotation)
-
-    // Rotate the circle around the box to negate the box's rotation
-    relCirclePos = circle.pos.sub(box.pos).rotatedBy(-boxRot)
-
-    boxSize = [box.shape.width / 2, box.shape.height / 2]
-
-    closestPoint = relCirclePos.clamp(boxSize.times(-1), boxSize)
-    circleDist = relCirclePos.sub(closestPoint).magnitude
-
-    closestPointAbs = closestPoint.rotatedBy(boxRot).plus(box.pos)
-
-    if debugDrawEnabled then
-        debugDraw.point closestPointAbs
-    end if
-
-    if relCirclePos.equals(closestPoint) then
-        // Circle is inside box
-
-        penLeft = relCirclePos.x + boxSize.x
-        penRight = -relCirclePos.x + boxSize.x
-        penBottom = relCirclePos.y + boxSize.y
-        penTop = -relCirclePos.y + boxSize.y
-        smallest = [penLeft, penRight, penBottom, penTop].min
-
-        if penLeft == smallest then
-            normal = [1, 0]
-        else if penRight == smallest then
-            normal = [-1, 0]
-        else if penBottom == smallest then
-            normal = [0, 1]
-        else if penTop == smallest then
-            normal = [0, -1]
-        else
+        if proj1.min >= proj2.max or proj2.min >= proj1.max then
             return false
         end if
 
-        return {
-            "normal": normal.rotatedBy(boxRot),
-            "depth": smallest + circle.shape.radius,
-            "points": [closestPointAbs],
-        }
-    end if
+        depth1 = proj1.max - proj2.min
+        depth2 = proj2.max - proj1.min
 
-    if circleDist <= circle.shape.radius then
-        return {
-            "normal": closestPoint.sub(relCirclePos).normalized.rotatedBy(boxRot),
-            "depth": circle.shape.radius - circleDist,
-            "points": [closestPointAbs],
-        }
-    end if
+        if depth1 > depth2 then
+            depth = depth2
+            axis = axis.times(-1)
+        else
+            depth = depth1
+        end if
 
-    return false
+        if depth < minDepth then
+            minDepth = depth
+
+            result = {
+                normal = axis,
+                depth = depth,
+            }
+        end if
+    end for
+
+    return result
 end function
 
-collideBodies = function(b1, b2)
-    if b1.shape isa shapes.RectangleShape and b2.shape isa shapes.RectangleShape then
-        // Box-box collision
-        //TODO: Optimize for case where both rectangles have rotation = 0
-        return sat.testRectangles(b1, b2)
-    else if b1.shape isa shapes.CircleShape and b2.shape isa shapes.RectangleShape then
-        // Circle-box collision
-        return testCircleBox(b1, b2)
-    else if b1.shape isa shapes.RectangleShape and b2.shape isa shapes.CircleShape then
-        // Box-circle collision
-        result = testCircleBox(b2, b1)
-        if not result then return false
+collisions.collideBodies = function(body1, body2)
+    axes = body1.shape.getAxes() + body2.shape.getAxes()
+    points1 = body1.shape.getVertices(body1.pos, mathUtil.degToRad(body1.rotation))
+    points2 = body2.shape.getVertices(body2.pos, mathUtil.degToRad(body2.rotation))
 
-        // Flip the normal because we are testing b2 to b1, instead of b1 to b2
-        result.normal.multiplyBy(-1)
-
-        return result
-    else if b1.shape isa shapes.CircleShape and b2.shape isa shapes.CircleShape then
-        // Circle-circle collision
-        return testCircleCircle(b1, b2)
+    overlap1 = collisions.findOverlapPoints(axes, points1, points2)
+    if not overlap1 then
+        return false
     end if
+
+    overlap2 = collisions.findOverlapPoints(axes, points2, points1)
+    if not overlap2 then
+        return false
+    end if
+
+    if overlap2.depth > overlap1.depth then
+        overlap = overlap1
+    else
+        overlap = overlap2
+        overlap.normal = overlap2.normal.times(-1)
+    end if
+
+    return overlap
 end function
