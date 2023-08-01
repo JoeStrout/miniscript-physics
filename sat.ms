@@ -9,7 +9,7 @@ getRectangleVertices = function(body)
     hh = body.shape.height / 2
 
     pos = body.pos
-    rot = mathUtil.degToRad(body.rotation)
+    rot = body.rotationRad
 
     return [
         [-hw, hh].rotatedBy(rot).plus(pos),
@@ -20,11 +20,9 @@ getRectangleVertices = function(body)
 end function
 
 getRectangleAxes = function(body)
-    rot = mathUtil.degToRad(body.rotation)
-
     return [
-        [1, 0].rotatedBy(rot),
-        [0, 1].rotatedBy(rot),
+        [1, 0].rotatedBy(body.rotationRad),
+        [0, 1].rotatedBy(body.rotationRad),
     ]
 end function
 

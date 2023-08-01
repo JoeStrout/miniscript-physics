@@ -45,7 +45,11 @@ list.clamp = function(min, max)
 end function
 
 list.cross = function(n)
-    return [-self[1] * n, self[0] * n]
+    if n isa list then
+        return self[0] * n[1] + self[1] * n[0]
+    else
+        return [-self[1] * n, self[0] * n]
+    end if
 end function
 
 list.equals = function(other)
