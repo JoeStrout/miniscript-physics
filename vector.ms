@@ -12,7 +12,8 @@ list.sub = function(x)
     return [self[0] - x[0], self[1] - x[1]]
 end function
 
-// Rotates returns a vector rotated around the origin. r is the angle to rotate this vector by in radians
+// Rotates returns a vector rotated around the origin. r is the angle 
+// to rotate this vector by in radians
 list.rotatedBy = function(r)
     return [cos(r) * self[0] - sin(r) * self[1], sin(r) * self[0] + cos(r) * self[1]]
 end function
@@ -44,6 +45,9 @@ list.clamp = function(min, max)
     ]
 end function
 
+// ToDo: What is this, exactly?  It doesn't look like a cross product.
+// Looks like either a dot product (with the normal of the argument),
+// or a scaled perpendicular.  Can we name it better?
 list.cross = function(n)
     if n isa list then
         return self[0] * n[1] + self[1] * n[0]
@@ -52,6 +56,8 @@ list.cross = function(n)
     end if
 end function
 
+// ToDo: probably don't need this, as == already works for lists
+// (and is probably more efficient).
 list.equals = function(other)
     return self[0] == other[0] and self[1] == other[1]
 end function
