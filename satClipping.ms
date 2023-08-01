@@ -109,5 +109,11 @@ clipPoints = function(points1, points2, normal)
         i = i - 1
     end while
 
+    if debugDrawEnabled then
+        for p in cp
+            debugDraw.point p, color.lime, 4
+        end for
+    end if
+
     return cp
 end function

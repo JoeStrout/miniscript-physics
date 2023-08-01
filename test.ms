@@ -3,6 +3,7 @@ clear
 import "physics"
 import "shapes"
 import "debugDraw"
+import "mathUtil"
 
 debugDrawEnabled = false
 
@@ -10,13 +11,14 @@ sprDisp = display(4)
 
 control = null
 
-createBlock = function(x, y, tint, scale)
+createBlock = function(x, y, tint, scale=1, rotation=0)
     body = new Sprite
     body.image = file.loadImage("/sys/pics/Block4.png")
     body.scale = scale
     body.tint = tint
     body.x = x
     body.y = y
+    body.rotation = rotation
     physics.initPhys body
     sprDisp.sprites.push body
 
@@ -25,7 +27,7 @@ end function
 
 createCircle = function(x, y, tint, scale=1)
     body = new Sprite
-    body.image = file.loadImage("/sys/pics/shapes/Circle.png")
+    body.image = file.loadImage("./circle.png")
     body.scale = scale
     body.tint = tint
     body.x = x
@@ -40,12 +42,10 @@ createWalls = function
     b = createBlock(480, -75, color.yellow, 4)
     b.setStatic true
 
-    l = createBlock(-130, 480, color.yellow, 4)
-    l.rotation = 90
+    l = createBlock(-130, 480, color.yellow, 4, 90)
     l.setStatic true
 
-    r = createBlock(1090, 480, color.yellow, 4)
-    r.rotation = 90
+    r = createBlock(1090, 480, color.yellow, 4, 90)
     r.setStatic true
 
     return { "bottom": b, "left": l, "right": r }
@@ -74,13 +74,11 @@ scenarioBallsCollision = function
 end function
 
 scenarioBallSlope = function
-    b = createBlock(400, 400, color.blue, 1)
+    b = createBlock(400, 400, color.blue, 1, -20)
     b.setStatic true
-    b.rotation = -20
 
-    b = createBlock(620, 200, color.blue, 1)
+    b = createBlock(620, 200, color.blue, 1, 20)
     b.setStatic true
-    b.rotation = 20
 
     globals.control = createCircle(350, 500, color.yellow, 1)
 end function
@@ -137,7 +135,42 @@ scenarioCannonBall = function
     c.dragCoef = 0
 end function
 
-scenarioDragRace
+scenarioTestCollisions = function
+    globals.debugDrawEnabled = true
+
+    physics.gravity = 0
+    physics.enableCollisionResponse = false
+
+    b = createBlock(400, 200, color.blue, 2, 20)
+
+    globals.control = createBlock(400, 400, color.yellow)
+end function
+
+scenarioStacking = function
+    createWalls
+
+    createBlock 700, 150, color.red
+    createBlock 500, 350, color.yellow, 1.25
+    globals.control = createBlock(300, 550, color.green, 1.5, 25)
+end function
+
+scenarioBat = function
+    physics.gravity = 0
+
+    bat = createBlock(200, 300, color.blue, 2)
+    bat.rotSpeed = mathUtil.degToRad(-60)
+
+    createCircle 300, 500, color.yellow
+end function
+
+scenarioBallTorque = function
+    walls = createWalls
+
+    circle = createCircle(200, 100, color.red)
+    circle.vel[0] = 300
+end function
+
+scenarioStacking
 
 dt = 1/60
 while not key.available

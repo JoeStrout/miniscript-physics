@@ -9,39 +9,15 @@ import "importUtil"
 
 import "collisions"
 import "debugDraw"
+import "vector"
 ensureImport "shapes"
 
 // Global physics constants
 gravity = 1000		// gravity, in downward pixels/sec^2 (1000 means 1 meter = 100 pixels)
-correctionFactor = 0.3 // usually 0.2 to 0.8
-correctionSlop = 0.01  // usually 0.01 to 0.1
+correctionFactor = 0.4 // usually 0.2 to 0.8
+correctionSlop = 0.05  // usually 0.01 to 0.1
 dragCoefficient = 0.0002
-
-// Function to find the rotational inertia of a physics body.
-rotInertia = function(body, density, scale)
-    if body.localBounds isa list then
-        // combine the inertia from each part
-        result = 0
-        for b in body.localBounds
-            w = b.width * scale
-            h = b.height * scale
-            x = b.x * scale
-            y = b.y * scale
-            m = w * h * density
-            result = result + m * ((w^2 + h^2) / 12 + x^2  + y^2)
-        end for
-        return result
-    else
-        // simple case: only one part (Bounds)
-        b = body.localBounds
-        w = b.width * scale
-        h = b.height * scale
-        x = b.x * scale
-        y = b.y * scale
-        m = w * h * density
-        return m * ((w^2 + h^2) / 12 + x^2  + y^2)
-    end if
-end function	
+enableCollisionResponse = true
 
 globals.lastId = 0
 
@@ -75,11 +51,9 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
     globals.lastId += 1
 
     body.elasticity = elasticity
-    body.vel = [0, 0]
-    body.drag = 0.01
-    body.rotInertia = rotInertia(body, density, scale)
-    body.rotSpeed = 0
-    body.rotDrag = 0.01
+    body.vel = [0, 0]                                   // pixels per second
+    body.rotationRad = mathUtil.degToRad(body.rotation) // radians
+    body.rotSpeed = 0                                   // radians per second
     body.forces = [0, 0]
     body.staticFriction = 0.2
     body.dynamicFriction = 0.1
@@ -97,17 +71,16 @@ initPhys = function(body, shape=null, density=0.01, elasticity=0.4)
         if s then
             body.mass = 0
             body.invMass = 0
+            body.inertia = 0
+            body.invInertia = 0
         else
             body.mass = calcMass
             body.invMass = 1 / calcMass
+            body.inertia = calcMass * body.shape.inertiaFactor
+            body.invInertia = 1 / body.inertia
         end if
     end function
     body.setStatic false
-
-    body.applyVel = function(v)
-        body.vel[0] += v[0]
-        body.vel[1] += v[1]
-    end function
 end function
 
 correctPositions = function(b1, b2, depth, normal)
@@ -135,24 +108,41 @@ collide = function(b1, b2)
         debugDraw.arrowLine b2.pos, normal.times(overlap.depth), color.red, 2
     end if
 
-    // Apply normal response impulse
+    if not enableCollisionResponse then return
 
-    vrel = b2.vel.sub(b1.vel)
+    point = vector.averageMany(overlap.points)
+    r1 = point.sub(b1.pos)
+    r2 = point.sub(b2.pos)
+
+    // Calculate normal response impulse
+
+    vp1 = b1.vel.plus(r1.cross(b1.rotSpeed))
+    vp2 = b2.vel.plus(r2.cross(b2.rotSpeed))
+    vrel = vp2.sub(vp1)
 
     vrelAlongNormal = vrel.dot(normal)
-    if vrelAlongNormal > 0 then return
+    if vrelAlongNormal >= 0 then return
 
     e = mathUtil.min(b1.elasticity, b2.elasticity)
 
-    j = -(1 + e) * vrelAlongNormal / (b1.invMass + b2.invMass)
-    impulse = normal.times(j)
+    j = -(1 + e) * vrelAlongNormal
+    j /= (b1.invMass + b2.invMass) + ((r1.normal.dot(normal) ^ 2) * b1.invInertia) + ((r2.normal.dot(normal) ^ 2) * b2.invInertia)
+    impulseNormal = normal.times(j)
 
-    b1.applyVel impulse.times(-b1.invMass)
-    b2.applyVel impulse.times(b2.invMass)
+    // Apply normal impulse
 
-    // Apply friction impulse
+    b1.vel.add impulseNormal.times(-b1.invMass)
+    b2.vel.add impulseNormal.times(b2.invMass)
 
-    vrel = b2.vel.sub(b1.vel)
+    b1.rotSpeed -= r1.cross(impulseNormal) * b1.invInertia
+    b2.rotSpeed += r2.cross(impulseNormal) * b2.invInertia
+
+    // Calculate friction impulse
+
+    vp1 = b1.vel.plus(r1.cross(b1.rotSpeed))
+    vp2 = b2.vel.plus(r2.cross(b2.rotSpeed))
+    vrel = vp2.sub(vp1)
+
     tangent = vrel.sub(normal.times(vrel.dot(normal))).normalized
 
     if debugDrawEnabled then
@@ -160,27 +150,27 @@ collide = function(b1, b2)
         debugDraw.arrowLine b2.pos, tangent.times(50), color.green, 2
     end if
 
-    jt = -vrel.dot(tangent) / (b1.invMass + b2.invMass)
+    jt = -(1 + e) * vrel.dot(tangent)
+    jt /= (b1.invMass + b2.invMass) + ((r1.normal.dot(tangent) ^ 2) * b1.invInertia) + ((r2.normal.dot(tangent) ^ 2) * b2.invInertia)
 
     mu = sqrt(b1.staticFriction ^ 2 + b2.staticFriction ^ 2)
 
     if abs(jt) < j * mu then
-        frictionImpulse = tangent.times(jt)
+        impulseTangent = tangent.times(jt)
     else
         dynamicFriction = sqrt(b1.dynamicFriction ^ 2 + b2.dynamicFriction ^ 2)
-        frictionImpulse = tangent.times(-j * dynamicFriction)
+        impulseTangent = tangent.times(-j * dynamicFriction)
     end if
 
-    b1.applyVel frictionImpulse.times(-b1.invMass)
-    b2.applyVel frictionImpulse.times(b2.invMass)
+    // Apply friction impulse
+
+    b1.vel.add impulseTangent.times(-b1.invMass)
+    b2.vel.add impulseTangent.times(b2.invMass)
+
+    b1.rotSpeed -= r1.cross(impulseTangent) * -b1.invInertia
+    b2.rotSpeed += r2.cross(impulseTangent) * -b2.invInertia
 
     correctPositions b1, b2, overlap.depth, overlap.normal
-end function
-
-resetForces = function(bodies)
-    for b in bodies
-        b.forces = [0, -gravity * b.mass]
-    end for
 end function
 
 calcCollisions = function(bodies)
@@ -224,7 +214,10 @@ updateBody = function(body, dt=0.01)
     body.x = body.x + body.vel[0] * dt
     body.y = body.y + body.vel[1] * dt
 
-    body.rotation = body.rotation + body.rotSpeed * dt
+    body.rotationRad += body.rotSpeed * dt
+    body.rotation = mathUtil.radToDeg(body.rotationRad)
+
+    body.forces = [0, -gravity * body.mass]
 end function
 
 updateMany = function(bodies, dt=0.01)
@@ -234,7 +227,6 @@ updateMany = function(bodies, dt=0.01)
     display(3).column = 0
     display(3).row = 0
 
-    resetForces bodies
     calcCollisions bodies
 
     for body in bodies

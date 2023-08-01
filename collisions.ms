@@ -41,17 +41,15 @@ testCircleBox = function(circle, box)
         debugDraw.circle circle.x, circle.y, circle.shape.radius
     end if
 
-    boxRot = mathUtil.degToRad(box.rotation)
-
     // Rotate the circle around the box to negate the box's rotation
-    relCirclePos = circle.pos.sub(box.pos).rotatedBy(-boxRot)
+    relCirclePos = circle.pos.sub(box.pos).rotatedBy(-box.rotationRad)
 
     boxSize = [box.shape.width / 2, box.shape.height / 2]
 
     closestPoint = relCirclePos.clamp(boxSize.times(-1), boxSize)
     circleDist = relCirclePos.sub(closestPoint).magnitude
 
-    closestPointAbs = closestPoint.rotatedBy(boxRot).plus(box.pos)
+    closestPointAbs = closestPoint.rotatedBy(box.rotationRad).plus(box.pos)
 
     if debugDrawEnabled then
         debugDraw.point closestPointAbs
@@ -79,7 +77,7 @@ testCircleBox = function(circle, box)
         end if
 
         return {
-            "normal": normal.rotatedBy(boxRot),
+            "normal": normal.rotatedBy(box.rotationRad),
             "depth": smallest + circle.shape.radius,
             "points": [closestPointAbs],
         }
@@ -87,7 +85,7 @@ testCircleBox = function(circle, box)
 
     if circleDist <= circle.shape.radius then
         return {
-            "normal": closestPoint.sub(relCirclePos).normalized.rotatedBy(boxRot),
+            "normal": closestPoint.sub(relCirclePos).normalized.rotatedBy(box.rotationRad),
             "depth": circle.shape.radius - circleDist,
             "points": [closestPointAbs],
         }
