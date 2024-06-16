@@ -7,9 +7,7 @@ The goal is to produce enough of a physics engine to support games like _Angry B
 
 ## Current State
 
-A very basic foundation has been laid, including calculating linear and angular momentum.  Collisions can be detected between simple (rectangular) physics bodies, but we do not yet have any collision response.  (Colliding physics bodies are tinted red for now.)
-
-The test program shows two dynamic blocks falling onto one giant static block (the ground).  But because there is no collision response, the smaller blocks just fall right through the ground and keep on accelerating downward forever.
+We have a functional physics core now, including collision response, involving both circles and rectangles.  Run the `test.ms` program to see various test scenarios.
 
 ## Help Wanted
 
